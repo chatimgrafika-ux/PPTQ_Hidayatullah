@@ -9,5 +9,9 @@ UserRiwayat,
 UserBayar,
 AdminView
 }
-
+  
+template:`
+<LoginView />
+`
+  
 }).mount("#app");
