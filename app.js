@@ -1,39 +1,14 @@
-const {createApp,ref}=Vue;
-
 createApp({
 
 components:{
-LoginView
-},
-
-setup(){
-
-const session=ref(null);
-const currentTab=ref("home");
-
-function handleLogin(data){
-
-session.value=data.user;
-
+LoginView,
+UserHome,
+UserRiwayat,
+UserBayar,
+AdminView
 }
 
-return{
-session,
-currentTab,
-handleLogin
-}
-
-},
-
-template:`
-
-<div class="max-w-md mx-auto min-h-screen bg-white">
-
-<LoginView
-v-if="!session"
-@login-success="handleLogin"
-/>
-
+}).mount("#app")
 <div v-if="session">
 
 <h2 class="p-4 font-bold">
