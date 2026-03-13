@@ -8,10 +8,10 @@ UserHome,
 UserRiwayat,
 UserBayar,
 AdminView
-}
-  
+},   // ← koma penting
+
 template:`
 <LoginView />
 `
-  
+
 }).mount("#app");
