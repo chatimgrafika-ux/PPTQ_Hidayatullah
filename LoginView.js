@@ -1,4 +1,5 @@
 const LoginView = {
+
 template:`
 
 <div class="flex-1 flex flex-col justify-center px-8">
@@ -58,15 +59,4 @@ alert(res.message);
 
 }
 
-}
-
-if(res.status==="success"){
-this.$emit("login-success",res)
-}else{
-alert(res.message)
-}
-
-}
-
-}
-}
+};
