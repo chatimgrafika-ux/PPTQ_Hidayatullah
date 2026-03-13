@@ -1,3 +1,5 @@
+const { createApp } = Vue;
+
 createApp({
 
 components:{
@@ -8,4 +10,4 @@ UserBayar,
 AdminView
 }
 
-}).mount("#app")
+}).mount("#app");
