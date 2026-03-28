@@ -68,6 +68,7 @@
                     <select id="namaLengkap" required disabled class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition bg-gray-50 disabled:cursor-not-allowed">
                         <option value="">-- Pilih Kelas Terlebih Dahulu --</option>
                     </select>
+                    <input type="hidden" id="idSantri">
                 </div>
 
                 <!-- Data Wali -->
@@ -207,6 +208,7 @@
         const form = document.getElementById('paymentForm');
         const kelasSelect = document.getElementById('kelas');
         const namaLengkapSelect = document.getElementById('namaLengkap');
+        const idSantriInput = document.getElementById('idSantri');
         const nominalDisplay = document.getElementById('nominalDisplay');
         const nominalValue = document.getElementById('nominalValue');
         const terbilangText = document.getElementById('terbilangText');
@@ -262,20 +264,29 @@
         // Event Listener Kelas
         kelasSelect.addEventListener('change', function() {
             const selectedKelas = this.value;
+            idSantriInput.value = "";
             namaLengkapSelect.innerHTML = '<option value="">-- Pilih Nama Santri --</option>';
+
             if (selectedKelas && dataSantri[selectedKelas]) {
                 namaLengkapSelect.disabled = false;
                 namaLengkapSelect.classList.remove('bg-gray-50', 'disabled:cursor-not-allowed');
-                dataSantri[selectedKelas].forEach(nama => {
+
+                dataSantri[selectedKelas].forEach(santri => {
                     const option = document.createElement('option');
-                    option.value = nama;
-                    option.textContent = nama;
+                    option.value = santri.id;          // ID santri
+                    option.textContent = santri.nama;  // Nama tampil
+                    option.dataset.nama = santri.nama; // Nama asli untuk submit
                     namaLengkapSelect.appendChild(option);
                 });
             } else {
                 namaLengkapSelect.disabled = true;
                 namaLengkapSelect.classList.add('bg-gray-50', 'disabled:cursor-not-allowed');
             }
+        });
+
+        // Event Listener Nama Santri
+        namaLengkapSelect.addEventListener('change', function() {
+            idSantriInput.value = this.value || "";
         });
 
         // Event Listener Nominal
@@ -332,6 +343,13 @@
                 return;
             }
 
+            const selectedNamaOption = namaLengkapSelect.options[namaLengkapSelect.selectedIndex];
+
+            if (!idSantriInput.value || !selectedNamaOption || !selectedNamaOption.dataset.nama) {
+                Swal.fire('Peringatan', 'Harap pilih nama santri terlebih dahulu!', 'warning');
+                return;
+            }
+
             const file = fileBukti.files[0];
             const reader = new FileReader();
             btnSubmit.disabled = true;
@@ -342,7 +360,8 @@
                 const payload = {
                     email: document.getElementById('email').value,
                     kelas: document.getElementById('kelas').value,
-                    namaLengkap: document.getElementById('namaLengkap').value,
+                    idSantri: idSantriInput.value,
+                    namaLengkap: selectedNamaOption.dataset.nama,
                     namaWali: document.getElementById('namaWali').value,
                     nomorWa: document.getElementById('nomorWa').value,
                     jenisPembayaran: jenisPembayaran.value,
@@ -375,6 +394,7 @@
                             confirmButtonColor: '#059669'
                         }).then(() => {
                             form.reset();
+                            idSantriInput.value = "";
                             fileNameDisplay.textContent = "Klik untuk upload atau drag and drop";
                             fileNameDisplay.classList.remove('text-emerald-600');
                             namaLengkapSelect.innerHTML = '<option value="">-- Pilih Kelas Terlebih Dahulu --</option>';
