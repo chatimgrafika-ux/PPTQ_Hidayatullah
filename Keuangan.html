@@ -76,7 +76,7 @@
         top: 0 !important;
         left: 0 !important;
         margin: 0 !important; 
-        padding: 1rem !important; /* Dikurangi menjadi p-4 */
+        padding: 1rem !important; /* Spasi luar (bingkai) */
         width: 210mm !important; /* Lebar tepat A5 */
         height: 148mm !important; /* Tinggi tepat A5 */
         min-width: 210mm !important;
@@ -569,7 +569,7 @@
         name: 'Klasik Formal', 
         thumb: 'bg-white border-2 border-slate-300',
         wrapperClass: 'bg-[#fafaf9] border-[12px] border-double border-slate-800 text-slate-900 font-serif-formal',
-        titleColor: 'text-slate-900 border-b-2 border-slate-900 font-black tracking-widest',
+        titleColor: 'text-slate-900 border-slate-900 font-black tracking-widest',
         accentText: 'text-slate-800',
         tableBorder: 'border-slate-800 border-dotted',
         boxBg: 'bg-transparent border border-slate-800 shadow-sm',
@@ -580,7 +580,7 @@
         name: 'Institusi Hijau', 
         thumb: 'bg-emerald-50 border-2 border-emerald-600',
         wrapperClass: 'bg-[#f4fdf8] border-[6px] border-emerald-900 text-slate-800 font-sans-modern ring-2 ring-emerald-900 ring-offset-2',
-        titleColor: 'text-emerald-900 border-b-[3px] border-emerald-700 tracking-wider',
+        titleColor: 'text-emerald-900 border-emerald-700 tracking-wider',
         accentText: 'text-emerald-800 font-semibold',
         tableBorder: 'border-emerald-300',
         boxBg: 'bg-emerald-50 border border-emerald-200 rounded-lg shadow-inner',
@@ -591,7 +591,7 @@
         name: 'Modern Biru', 
         thumb: 'bg-blue-50 border-l-4 border-blue-600',
         wrapperClass: 'bg-white border-l-[24px] border-blue-700 text-slate-700 font-sans-modern shadow-xl',
-        titleColor: 'text-blue-800 border-b border-slate-200 tracking-widest',
+        titleColor: 'text-blue-800 border-slate-200 tracking-widest',
         accentText: 'text-blue-600 font-bold',
         tableBorder: 'border-slate-200',
         boxBg: 'bg-slate-50 border border-slate-200 rounded-xl',
@@ -602,7 +602,7 @@
         name: 'Elegan Emas', 
         thumb: 'bg-[#fdfbf7] border-2 border-[#b8860b]',
         wrapperClass: 'bg-[#fdfbf7] border-4 border-[#b8860b] ring-4 ring-offset-4 ring-[#b8860b]/40 text-[#4a3f35] font-serif-elegant shadow-2xl',
-        titleColor: 'text-[#8b6508] border-b border-[#b8860b] uppercase tracking-widest',
+        titleColor: 'text-[#8b6508] border-[#b8860b] uppercase tracking-widest',
         accentText: 'text-[#8b6508]',
         tableBorder: 'border-[#deb887]',
         boxBg: 'bg-transparent border border-[#deb887] shadow-inner',
@@ -1006,8 +1006,11 @@
 
       let rincian = `<strong class="${theme.accentText} text-sm">${data.jenis_pembayaran || '...'}</strong>`;
       let metaInfo = [];
-      if(data.nama_santri) metaInfo.push(`Santri: ${data.nama_santri}`);
+      
+      // SWAPPED: Wali info is now shown in the details/rincian instead of "Telah terima dari"
+      if(data.nama_wali) metaInfo.push(`Wali: ${data.nama_wali}`);
       if(data.kelas) metaInfo.push(`Kelas: ${data.kelas}`);
+      
       if(data.bulan || data.tahun) {
         let period = [];
         if(data.bulan && data.bulan !== '-') period.push(data.bulan);
@@ -1025,81 +1028,90 @@
       const formattedNominal = data.nominal ? formatRupiah(data.nominal) : 'Rp 0';
 
       const html = `
-        <div class="kwitansi-paper flex flex-col p-4 relative overflow-hidden box-border ${theme.bgOut}">
-          <div class="w-full h-full relative flex flex-col justify-between p-4 box-border ${theme.wrapperClass}">
+        <div class="kwitansi-paper flex flex-col p-3 relative overflow-hidden box-border ${theme.bgOut}">
+          <div class="w-full h-full relative flex flex-col justify-between p-0 box-border ${theme.wrapperClass}">
             
             <img src="${LOGO_URL}" class="watermark" crossorigin="anonymous">
 
-            <div class="w-full flex justify-center mb-2 relative z-10 flex-shrink-0">
-              <img src="${KOP_URL}" alt="Kop Surat" class="h-12 object-contain drop-shadow-sm" crossorigin="anonymous">
+            <!-- KOP SURAT 80% LEBAR -->
+            <div class="w-full relative z-10 flex-shrink-0 border-b border-dashed ${theme.tableBorder} flex justify-center pb-2">
+              <img src="${KOP_URL}" alt="Kop Surat" class="w-[80%] max-h-16 object-contain object-center drop-shadow-sm" crossorigin="anonymous">
             </div>
 
-            <div class="text-center mb-2 relative z-10 border-t border-b border-dashed ${theme.tableBorder} py-1.5 mx-8 flex-shrink-0">
-              <h2 class="text-lg font-bold uppercase inline-block ${theme.titleColor}">
-                ${data.jenis_dokumen}
-              </h2>
-              ${data.id_tagihan ? `<div class="text-[10px] mt-0.5 font-semibold tracking-widest ${theme.accentText}">NO: ${data.id_tagihan}</div>` : ''}
-            </div>
-
-            <div class="flex-1 flex flex-col gap-1.5 relative z-10 text-xs px-4 justify-center">
-              <div class="flex items-end gap-3">
-                <div class="w-32 flex-shrink-0 font-semibold opacity-90 pb-0.5">Telah terima dari</div>
-                <div class="flex-shrink-0 opacity-80 pb-0.5">:</div>
-                <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-0.5 ${theme.accentText} font-bold text-base font-serif-elegant uppercase tracking-wide truncate">
-                  ${data.nama_wali || '...................................................'}
-                </div>
+            <!-- ISI KWITANSI (Menggunakan P-5 Agar Teks Tidak Menempel Di Border) -->
+            <div class="flex-1 flex flex-col px-5 pb-3 pt-2 justify-between z-10">
+              
+              <!-- Judul & TRX Mepet (Diturunkan) -->
+              <div class="text-center mb-2 mt-2 relative z-10 flex flex-col items-center">
+                <h2 class="text-xl font-bold uppercase inline-block ${theme.titleColor} leading-tight m-0 pb-1 border-b-2">
+                  ${data.jenis_dokumen}
+                </h2>
+                ${data.id_tagihan ? `<div class="text-[9px] mt-1 font-semibold tracking-widest ${theme.accentText} bg-slate-100 px-2 py-0.5 rounded-full border border-current opacity-80 shadow-sm">NO. TRX: ${data.id_tagihan}</div>` : ''}
               </div>
 
-              <div class="flex items-start gap-3 mt-1">
-                <div class="w-32 flex-shrink-0 font-semibold opacity-90 pt-1.5">Uang sejumlah</div>
-                <div class="flex-shrink-0 opacity-80 pt-1.5">:</div>
-                <div class="flex-1 ${theme.boxBg} p-2 min-h-[2.5rem] italic leading-snug text-sm font-signature font-bold ${theme.accentText}">
-                  ${data.terbilang || '...................................................................................................'}
+              <!-- Baris Konten Utama -->
+              <div class="flex-1 flex flex-col gap-1.5 relative z-10 text-xs justify-center mt-1">
+                <div class="flex items-end gap-3">
+                  <div class="w-32 flex-shrink-0 font-semibold opacity-90 pb-0.5">Telah terima dari</div>
+                  <div class="flex-shrink-0 opacity-80 pb-0.5">:</div>
+                  <!-- SWAPPED TO NAMA SANTRI -->
+                  <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-0.5 ${theme.accentText} font-bold text-base font-serif-elegant uppercase tracking-wide truncate">
+                    ${data.nama_santri || '...................................................'}
+                  </div>
                 </div>
-              </div>
 
-              <div class="flex items-end gap-3 mt-1">
-                <div class="w-32 flex-shrink-0 font-semibold opacity-90 pb-0.5">Untuk pembayaran</div>
-                <div class="flex-shrink-0 opacity-80 pb-0.5">:</div>
-                <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-0.5 leading-snug">
-                  ${rincian}
+                <div class="flex items-start gap-3 mt-1">
+                  <div class="w-32 flex-shrink-0 font-semibold opacity-90 pt-1.5">Uang sejumlah</div>
+                  <div class="flex-shrink-0 opacity-80 pt-1.5">:</div>
+                  <div class="flex-1 ${theme.boxBg} p-2 min-h-[2.5rem] italic leading-snug text-sm font-signature font-bold ${theme.accentText}">
+                    ${data.terbilang || '...................................................................................................'}
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div class="mt-2 flex justify-between items-end relative z-10 px-4 flex-shrink-0">
-              <div class="w-[45%] min-w-[200px]">
-                <div class="text-[10px] font-semibold uppercase opacity-70 mb-0.5">Total Pembayaran:</div>
-                <div class="text-xl px-3 py-1.5 ${theme.amountBox}">
-                  ${formattedNominal}
-                </div>
-                ${data.rekening ? `<div class="text-[9px] mt-1 opacity-70 uppercase truncate font-semibold border-t ${theme.tableBorder} pt-1">Rek: ${data.rekening}</div>` : ''}
-              </div>
-
-              <div class="w-[45%] flex flex-col items-center text-center text-xs">
-                <div class="mb-0.5 font-semibold">
-                  Ternate, ${data.tanggal ? formatDateIndo(data.tanggal) : '....................'}
-                </div>
-                <div class="font-semibold mb-1">
-                  ${data.status === 'Terkonfirmasi' ? '<span class="text-emerald-600 font-bold border border-emerald-600 px-1.5 rounded uppercase text-[8px] mb-0.5 inline-block tracking-widest">TERKONFIRMASI</span><br>' : ''}
-                  Penerima / Bendahara
-                </div>
-                
-                <!-- Area Tanda Tangan & Cap -->
-                <div class="w-full relative flex flex-col items-center justify-end min-h-[55px] mt-1">
-                  <!-- Cap Stempel Paten (Dimiringkan & Multiply) -->
-                  <img src="${STAMP_URL}" class="absolute top-[-25px] left-[-25px] h-20 object-contain opacity-90 z-20 -rotate-6 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
-                  
-                  <!-- Upload Tanda Tangan Digital -->
-                  ${signatureBase64 ? `<img src="${signatureBase64}" class="absolute bottom-3 max-h-16 object-contain opacity-90 z-10 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">` : ''}
-                  
-                  <div class="border-b border-current w-full pb-0.5 font-bold ${theme.accentText} uppercase tracking-wider relative z-30">
-                    <span class="bg-white/40 px-2 rounded-sm backdrop-blur-[1px]">${data.penerima || '....................................'}</span>
+                <div class="flex items-end gap-3 mt-1">
+                  <div class="w-32 flex-shrink-0 font-semibold opacity-90 pb-0.5">Untuk pembayaran</div>
+                  <div class="flex-shrink-0 opacity-80 pb-0.5">:</div>
+                  <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-0.5 leading-snug">
+                    ${rincian}
                   </div>
                 </div>
               </div>
+
+              <!-- Footer Nominal & Tanda Tangan -->
+              <div class="mt-2 flex justify-between items-end relative z-10 flex-shrink-0">
+                <div class="w-[45%] min-w-[200px]">
+                  <div class="text-[10px] font-semibold uppercase opacity-70 mb-0.5">Total Pembayaran:</div>
+                  <div class="text-xl px-3 py-1.5 ${theme.amountBox}">
+                    ${formattedNominal}
+                  </div>
+                  ${data.rekening ? `<div class="text-[9px] mt-1 opacity-70 uppercase truncate font-semibold border-t ${theme.tableBorder} pt-1">Rek: ${data.rekening}</div>` : ''}
+                </div>
+
+                <div class="w-[45%] flex flex-col items-center text-center text-xs">
+                  <div class="mb-0.5 font-semibold">
+                    Ternate, ${data.tanggal ? formatDateIndo(data.tanggal) : '....................'}
+                  </div>
+                  <div class="font-semibold mb-1">
+                    ${data.status === 'Terkonfirmasi' ? '<span class="text-emerald-600 font-bold border border-emerald-600 px-1.5 rounded uppercase text-[8px] mb-0.5 inline-block tracking-widest">TERKONFIRMASI</span><br>' : ''}
+                    Penerima / Bendahara
+                  </div>
+                  
+                  <!-- Area Tanda Tangan & Cap -->
+                  <div class="w-full relative flex flex-col items-center justify-end min-h-[55px] mt-1">
+                    <!-- Cap Stempel Paten (Dimiringkan & Multiply) -->
+                    <img src="${STAMP_URL}" class="absolute top-[-25px] left-[-15px] h-20 object-contain opacity-90 z-20 -rotate-6 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
+                    
+                    <!-- Upload Tanda Tangan Digital -->
+                    ${signatureBase64 ? `<img src="${signatureBase64}" class="absolute bottom-3 max-h-16 object-contain opacity-90 z-10 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">` : ''}
+                    
+                    <div class="border-b border-current w-full pb-0.5 font-bold ${theme.accentText} uppercase tracking-wider relative z-30">
+                      <span class="bg-white/60 px-2 rounded-sm backdrop-blur-[1px]">${data.penerima || '....................................'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
             </div>
-            
           </div>
         </div>
       `;
