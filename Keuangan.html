@@ -31,24 +31,31 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Print Styles - A4 Portrait, Kwitansi A5 Rapat Kiri Atas */
+    /* Print Styles - A5 Landscape Rapat Kiri Atas */
     @media print {
       * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
       @page {
-        size: A4 portrait;
+        size: A5 landscape;
         margin: 0;
       }
-      body { background-color: white; margin: 0; padding: 0; }
-      #sidebar, #topbar, #manajemen-panel, #konfirmasi-panel, .print-hidden, #zoom-controls, #sidebar-overlay { 
+      html, body { 
+        background-color: white !important; 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 210mm !important;
+        height: 148mm !important;
+      }
+      /* Sembunyikan semua elemen kecuali area print */
+      #sidebar, #topbar, #manajemen-panel, #konfirmasi-panel, #form-panel, .print-hidden, #zoom-controls, #sidebar-overlay, #auth-overlay { 
         display: none !important; 
       }
       #main-content { 
         margin: 0 !important; 
         padding: 0 !important; 
-        width: 100% !important; 
+        width: 210mm !important; 
         display: block !important; 
       }
       #generator-panel {
@@ -62,25 +69,33 @@
         margin: 0 !important;
         display: block !important;
         background: white !important;
-        overflow: visible !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
       }
       #preview-container { 
         box-shadow: none !important; 
         border: none !important; 
-        width: 100% !important; 
-        height: auto !important; 
+        width: 210mm !important; 
+        height: 148mm !important; 
         transform: none !important;
         display: block !important;
         margin: 0 !important;
         padding: 0 !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
       }
       .kwitansi-paper {
         border: none !important;
         box-shadow: none !important;
-        width: 210mm !important; /* Lebar A5 */
-        height: 148mm !important; /* Tinggi A5 */
+        width: 210mm !important; /* Lebar A5 Landscape */
+        height: 148mm !important; /* Tinggi A5 Landscape */
         min-width: 210mm !important;
         min-height: 148mm !important;
+        max-width: 210mm !important;
+        max-height: 148mm !important;
         transform: none !important;
         margin: 0 !important; 
         position: absolute !important;
@@ -300,7 +315,7 @@
     <div id="generator-panel" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
       
       <!-- FORM INPUT (KIRI) -->
-      <div class="w-full lg:w-[400px] xl:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
+      <div id="form-panel" class="print-hidden w-full lg:w-[400px] xl:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
         
         <div class="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b border-slate-100">
           <h3 class="text-xs md:text-sm font-bold text-slate-800 uppercase tracking-wider">Data Transaksi</h3>
@@ -737,8 +752,14 @@
     window.addEventListener('beforeprint', () => {
       const container = document.getElementById('preview-container');
       const paper = document.querySelector('.kwitansi-paper');
-      if(container) { container.style.width = '100%'; container.style.height = 'auto'; }
-      if(paper) { paper.style.transform = 'none'; }
+      if(container) { 
+        container.style.width = '210mm'; 
+        container.style.height = '148mm'; 
+        container.style.transform = 'none'; 
+      }
+      if(paper) { 
+        paper.style.transform = 'none'; 
+      }
     });
     window.addEventListener('afterprint', autoZoom);
 
