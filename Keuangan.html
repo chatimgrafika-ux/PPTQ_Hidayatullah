@@ -11,6 +11,9 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700&family=Dancing+Script:wght@700&display=swap');
 
@@ -52,7 +55,7 @@
       }
       
       /* Sembunyikan semua elemen UI Form, Navigasi, Overlay dll */
-      #sidebar, #topbar, #manajemen-panel, #konfirmasi-panel, #form-panel, .print-hidden, #zoom-controls, #sidebar-overlay, #auth-overlay { 
+      #sidebar, #topbar, #manajemen-panel, #konfirmasi-panel, #laporan-panel, #form-panel, .print-hidden, #zoom-controls, #sidebar-overlay, #auth-overlay { 
         display: none !important; 
       }
       
@@ -76,16 +79,16 @@
         top: 0 !important;
         left: 0 !important;
         margin: 0 !important; 
-        padding: 1rem !important; /* Spasi luar (bingkai) */
-        width: 210mm !important; /* Lebar tepat A5 */
-        height: 148mm !important; /* Tinggi tepat A5 */
+        padding: 1rem !important; 
+        width: 210mm !important; 
+        height: 148mm !important; 
         min-width: 210mm !important;
         min-height: 148mm !important;
         max-width: 210mm !important;
         max-height: 148mm !important;
         box-shadow: none !important;
         border: none !important;
-        transform: scale(1) !important; /* Hilangkan efek zoom browser */
+        transform: scale(1) !important; 
         transform-origin: top left !important;
         page-break-after: avoid !important;
         page-break-inside: avoid !important;
@@ -105,8 +108,8 @@
       box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
       position: relative;
       overflow: hidden;
-      width: 210mm; /* Lebar Pasti A5 */
-      height: 148mm; /* Tinggi Pasti A5 */
+      width: 210mm; 
+      height: 148mm; 
       min-width: 210mm;
       min-height: 148mm;
       max-width: none;
@@ -252,6 +255,9 @@
       <button onclick="switchTab('manajemen')" id="nav-manajemen" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors">
         <i data-lucide="database" class="w-4 h-4"></i> Data Tersimpan
       </button>
+      <button onclick="switchTab('laporan')" id="nav-laporan" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Laporan & Grafik
+      </button>
     </nav>
 
     <div class="p-4 border-t border-slate-800">
@@ -281,7 +287,11 @@
           <i data-lucide="file-signature" class="w-5 h-5 text-blue-600"></i> Generator Kwitansi
         </h2>
       </div>
-      <div class="flex items-center gap-2 md:gap-3">
+      <div class="flex items-center gap-2 md:gap-3" id="topbar-actions">
+        <!-- Ikon Toggle Preview (Mata) -->
+        <button onclick="togglePreview()" class="px-2 py-2 text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-lg transition-colors print-hidden" title="Sembunyikan/Tampilkan Preview">
+          <i data-lucide="eye-off" id="toggle-preview-icon" class="w-4 h-4 md:w-5 md:h-5"></i>
+        </button>
         <button onclick="resetForm()" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors print-hidden flex items-center gap-1" title="Reset Form">
           <i data-lucide="refresh-ccw" class="w-3.5 h-3.5 md:hidden"></i>
           <span class="hidden md:inline">Reset</span>
@@ -300,12 +310,29 @@
     <!-- TAB: GENERATOR -->
     <div id="generator-panel" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
       
-      <!-- FORM INPUT (KIRI) -->
-      <div id="form-panel" class="print-hidden w-full lg:w-[400px] xl:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
+      <!-- PREVIEW (KANAN pada Desktop, ATAS pada Mobile) -->
+      <!-- Menggunakan order-1 lg:order-2 agar di HP ada di atas, di Desktop ada di Kanan -->
+      <div id="preview-section" class="order-1 lg:order-2 flex-1 bg-slate-800 overflow-auto p-4 md:p-8 flex items-start justify-center custom-scrollbar relative transition-all duration-300 max-h-[45vh] lg:max-h-none border-b border-slate-700 lg:border-b-0">
+        <!-- Zoom Controls -->
+        <div id="zoom-controls" class="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex gap-2 print-hidden bg-slate-900/80 p-2 rounded-xl backdrop-blur-sm border border-slate-700 shadow-2xl z-20">
+          <button onclick="setZoom(-0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-out" class="w-3 h-3 md:w-4 md:h-4"></i></button>
+          <button onclick="resetZoom()" class="text-white hover:text-blue-400 p-1.5 text-[10px] md:text-xs font-bold w-8 md:w-10 text-center" id="zoom-level">100%</button>
+          <button onclick="setZoom(0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-in" class="w-3 h-3 md:w-4 md:h-4"></i></button>
+        </div>
+
+        <!-- Kertas Kwitansi (Absolute Rigid A5 Shape) -->
+        <div id="preview-container" class="transition-transform duration-300 origin-top flex items-center justify-center">
+          <!-- Konten Kwitansi di-inject via JS -->
+        </div>
+      </div>
+
+      <!-- FORM INPUT (KIRI pada Desktop, BAWAH pada Mobile) -->
+      <!-- Menggunakan order-2 lg:order-1 agar di HP ada di bawah Preview, di Desktop ada di Kiri -->
+      <div id="form-panel" class="order-2 lg:order-1 print-hidden w-full lg:w-[400px] xl:w-[450px] bg-white lg:border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-4 md:p-6 relative transition-all duration-300">
         
         <div class="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b border-slate-100">
           <h3 class="text-xs md:text-sm font-bold text-slate-800 uppercase tracking-wider">Data Transaksi</h3>
-          <button onclick="loadSampleData()" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded border border-amber-200 hover:bg-amber-200 transition-colors">Isi Data Sample</button>
+          <button onclick="loadSampleData()" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded border border-amber-200 hover:bg-amber-200 transition-colors shadow-sm">Isi Data Sample</button>
         </div>
 
         <form id="kwitansi-form" class="space-y-4 pb-12">
@@ -389,7 +416,7 @@
                   <div class="grid grid-cols-2 gap-2" id="bulan_checkboxes">
                     <!-- Diisi via JS -->
                   </div>
-                  <button type="button" onclick="toggleBulanDropdown(event)" class="mt-3 w-full bg-blue-50 text-blue-600 font-semibold py-1.5 rounded-md text-xs hover:bg-blue-100">Selesai</button>
+                  <button type="button" onclick="toggleBulanDropdown(event)" class="mt-3 w-full bg-blue-50 text-blue-600 font-semibold py-1.5 rounded-md text-xs hover:bg-blue-100 shadow-sm">Selesai</button>
               </div>
             </div>
             
@@ -447,20 +474,6 @@
         </form>
       </div>
 
-      <!-- PREVIEW (KANAN) -->
-      <div class="flex-1 bg-slate-800 overflow-auto p-4 md:p-8 flex items-start justify-center custom-scrollbar relative" id="preview-viewport">
-        <!-- Zoom Controls -->
-        <div id="zoom-controls" class="absolute bottom-6 right-6 flex gap-2 print-hidden bg-slate-900/80 p-2 rounded-xl backdrop-blur-sm border border-slate-700 shadow-2xl z-20">
-          <button onclick="setZoom(-0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
-          <button onclick="resetZoom()" class="text-white hover:text-blue-400 p-1.5 text-xs font-bold w-10 text-center" id="zoom-level">100%</button>
-          <button onclick="setZoom(0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
-        </div>
-
-        <!-- Kertas Kwitansi (Absolute Rigid A5 Shape) -->
-        <div id="preview-container" class="transition-transform duration-300 origin-top flex items-center justify-center">
-          <!-- Konten Kwitansi di-inject via JS -->
-        </div>
-      </div>
     </div>
 
     <!-- TAB: KONFIRMASI PEMBAYARAN -->
@@ -506,7 +519,7 @@
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sinkronisasi Database
           </button>
         </div>
-        <p class="text-xs md:text-sm text-slate-500 mb-4">Sinkronisasikan data Anda untuk memperbarui tabel lokal dari Google Sheets.</p>
+        <p class="text-xs md:text-sm text-slate-500 mb-4">Transaksi diurutkan dari tanggal terbaru dan dikelompokkan per bulan.</p>
         
         <div class="flex gap-4 mb-4">
           <div class="flex-1 relative">
@@ -548,6 +561,71 @@
       </div>
     </div>
 
+    <!-- TAB: LAPORAN & GRAFIK -->
+    <div id="laporan-panel" class="hidden flex-1 flex flex-col bg-slate-50 overflow-hidden">
+      <div class="p-4 md:p-6 bg-white border-b border-slate-200">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Laporan & Analitik Pendapatan</h3>
+            <p class="text-xs md:text-sm text-slate-500">Statistik hanya menghitung transaksi berstatus <span class="font-bold text-emerald-600">Terkonfirmasi</span>.</p>
+          </div>
+          <button onclick="fetchDataFromServer(); setTimeout(renderLaporan, 1000);" class="w-full md:w-auto px-4 py-2 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Perbarui Laporan
+          </button>
+        </div>
+      </div>
+      
+      <div class="flex-1 overflow-auto p-4 md:p-6 space-y-6">
+        <!-- Cards Summary -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+            <div class="absolute right-0 top-0 w-24 h-24 bg-emerald-50 rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center flex-shrink-0 relative z-10">
+              <i data-lucide="calendar" class="w-6 h-6"></i>
+            </div>
+            <div class="relative z-10">
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1" id="lap-label-bulan">PENDAPATAN BULAN INI</p>
+              <h4 class="text-2xl font-black text-slate-800" id="lap-total-bulan">Rp 0</h4>
+            </div>
+          </div>
+          <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+             <div class="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-full -mr-8 -mt-8 pointer-events-none"></div>
+            <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center flex-shrink-0 relative z-10">
+              <i data-lucide="wallet" class="w-6 h-6"></i>
+            </div>
+            <div class="relative z-10">
+              <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">TOTAL PENDAPATAN KESELURUHAN</p>
+              <h4 class="text-2xl font-black text-slate-800" id="lap-total-semua">Rp 0</h4>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Grafik -->
+          <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-2 mb-4">
+               <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Grafik Pendapatan Bulanan</h4>
+               <span class="text-[9px] md:text-[10px] bg-slate-100 text-slate-500 px-2 py-1 rounded-md">💡 Klik batang grafik untuk filter rekening</span>
+            </div>
+            <div class="relative h-64 w-full cursor-pointer">
+              <canvas id="chartIncome"></canvas>
+            </div>
+          </div>
+
+          <!-- List Rekening -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+            <h4 class="text-sm font-bold text-slate-800 uppercase tracking-wide mb-4 border-b border-slate-100 pb-2 flex items-center justify-between" id="lap-rek-title">
+               Klasifikasi Keseluruhan
+            </h4>
+            <div id="lap-rekening-list" class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2">
+              <!-- Diisi via JS -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
   </main>
 
   <!-- SCRIPTS -->
@@ -562,7 +640,6 @@
     const API_KEY = "PPTQH26";
 
     // --- 5 Tema Profesional & Formal ---
-    // Diperbarui dengan memastikan struktur box-border aman dan tidak menggunakan elemen responsif
     const themes = [
       {
         id: 0, 
@@ -627,12 +704,32 @@
     let savedReceipts = JSON.parse(localStorage.getItem('finance_receipts') || '[]');
     let currentStatusFilter = 'Semua';
     let signatureBase64 = localStorage.getItem('app_signature') || '';
+    let incomeChartInstance = null;
+    let isPreviewVisible = true;
 
     // Data Bulan
     const monthList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     // Initialize Lucide Icons
     lucide.createIcons();
+
+    // --- Toggle Preview Function (Icon Mata) ---
+    function togglePreview() {
+      const previewSection = document.getElementById('preview-section');
+      const icon = document.getElementById('toggle-preview-icon');
+      
+      isPreviewVisible = !isPreviewVisible;
+      
+      if (isPreviewVisible) {
+          previewSection.classList.remove('hidden');
+          icon.setAttribute('data-lucide', 'eye-off');
+          setTimeout(() => { autoZoom(); }, 50);
+      } else {
+          previewSection.classList.add('hidden');
+          icon.setAttribute('data-lucide', 'eye');
+      }
+      lucide.createIcons();
+    }
 
     // --- Auth Logic ---
     function checkAuth() {
@@ -707,6 +804,24 @@
         return `TRX-${dateStr}-${rand}`;
     }
 
+    // --- Parsing Date Helper ---
+    function parseDateString(dateStr) {
+        if(!dateStr) return new Date(0); // Epoch if invalid
+        if(dateStr.includes('/')) {
+            // Format dari server "dd/MM/yyyy HH.mm.ss"
+            const parts = dateStr.split(' ')[0].split('/');
+            if(parts.length === 3) return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`);
+        }
+        // Fallback untuk format standar "yyyy-mm-dd"
+        const d = new Date(dateStr);
+        return isNaN(d) ? new Date(0) : d;
+    }
+
+    function getMonthYearStr(dateObj) {
+        if(isNaN(dateObj) || dateObj.getTime() === 0) return "Tanpa Tanggal";
+        return `${monthList[dateObj.getMonth()]} ${dateObj.getFullYear()}`;
+    }
+
     // --- Init App ---
     function init() {
       checkAuth();
@@ -741,14 +856,23 @@
         paper.style.transform = 'scale(1)'; 
         paper.style.transformOrigin = 'top left';
       }
+      // Force preview visible for printing
+      const previewSection = document.getElementById('preview-section');
+      if(previewSection) previewSection.classList.remove('hidden');
     });
-    window.addEventListener('afterprint', autoZoom);
+    window.addEventListener('afterprint', () => {
+        if (!isPreviewVisible) {
+            document.getElementById('preview-section').classList.add('hidden');
+        }
+        autoZoom();
+    });
 
     // --- Tab Navigation ---
     function switchTab(tabId) {
       document.getElementById('generator-panel').classList.toggle('hidden', tabId !== 'generator');
       document.getElementById('konfirmasi-panel').classList.toggle('hidden', tabId !== 'konfirmasi');
       document.getElementById('manajemen-panel').classList.toggle('hidden', tabId !== 'manajemen');
+      document.getElementById('laporan-panel').classList.toggle('hidden', tabId !== 'laporan');
       
       const activeClass = "w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-blue-900/20";
       const inactiveClass = "w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors";
@@ -756,17 +880,21 @@
       document.getElementById('nav-generator').className = tabId === 'generator' ? activeClass : inactiveClass;
       document.getElementById('nav-konfirmasi').className = tabId === 'konfirmasi' ? activeClass : inactiveClass;
       document.getElementById('nav-manajemen').className = tabId === 'manajemen' ? activeClass : inactiveClass;
+      document.getElementById('nav-laporan').className = tabId === 'laporan' ? activeClass : inactiveClass;
 
       let titleHTML = '';
       if(tabId === 'generator') titleHTML = '<i data-lucide="file-signature" class="w-5 h-5 text-blue-600"></i> Generator Kwitansi';
       else if(tabId === 'konfirmasi') titleHTML = '<i data-lucide="check-square" class="w-5 h-5 text-blue-600"></i> Konfirmasi Pembayaran';
+      else if(tabId === 'laporan') titleHTML = '<i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-600"></i> Laporan Keuangan';
       else titleHTML = '<i data-lucide="database" class="w-5 h-5 text-blue-600"></i> Manajemen Data';
       
       document.getElementById('page-title').innerHTML = titleHTML;
+      document.getElementById('topbar-actions').style.display = tabId === 'generator' ? 'flex' : 'none';
       
       lucide.createIcons();
       if(tabId === 'generator') autoZoom();
       if(tabId === 'konfirmasi') renderKonfirmasiTable();
+      if(tabId === 'laporan') renderLaporan();
 
       if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
@@ -1018,10 +1146,10 @@
       }
       
       if(metaInfo.length > 0) {
-        rincian += `<br><span class="text-xs opacity-80 mt-0.5 inline-block">${metaInfo.join(' | ')}</span>`;
+        rincian += `<br><span class="text-sm opacity-80 mt-1 inline-block">${metaInfo.join(' | ')}</span>`;
       }
       if(data.catatan) {
-        rincian += `<br><span class="text-[10px] italic opacity-70 mt-0.5 inline-block font-sans-modern">* Catatan: ${data.catatan}</span>`;
+        rincian += `<br><span class="text-xs italic opacity-70 mt-1 inline-block font-sans-modern">* Catatan: ${data.catatan}</span>`;
       }
 
       const formattedNominal = data.nominal ? formatRupiah(data.nominal) : 'Rp 0';
@@ -1032,15 +1160,15 @@
             
             <img src="${LOGO_URL}" class="watermark" crossorigin="anonymous">
 
-            <!-- KOP SURAT HD (Lebar proporsional tanpa kompresi tinggi) -->
+            <!-- KOP SURAT HD -->
             <div class="w-full relative z-10 flex-shrink-0 border-b border-dashed ${theme.tableBorder} flex justify-center pb-3">
               <img src="${KOP_URL}" alt="Kop Surat" class="w-[85%] h-auto object-contain object-center drop-shadow-sm" style="image-rendering: high-quality;" crossorigin="anonymous">
             </div>
 
-            <!-- ISI KWITANSI (Menggunakan P-5 Agar Teks Tidak Menempel Di Border) -->
+            <!-- ISI KWITANSI -->
             <div class="flex-1 flex flex-col px-5 pb-3 pt-2 justify-between z-10">
               
-              <!-- Judul & TRX Mepet (Diturunkan) -->
+              <!-- Judul & TRX Mepet -->
               <div class="text-center mb-2 mt-2 relative z-10 flex flex-col items-center">
                 <h2 class="text-xl font-bold uppercase inline-block ${theme.titleColor} leading-tight m-0 pb-1 border-b-2">
                   ${data.jenis_dokumen}
@@ -1098,10 +1226,10 @@
                       Penerima / Bendahara
                     </div>
 
-                    <!-- Cap Stempel Paten (Diperbesar 1.5x (h-[120px]) & Digeser ke Kiri/Bawah) -->
+                    <!-- Cap Stempel Paten -->
                     <img src="${STAMP_URL}" class="absolute bottom-[-15px] left-[-45px] h-[120px] object-contain opacity-85 z-20 -rotate-12 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
                     
-                    <!-- Upload Tanda Tangan Digital (Diperbesar & Menimpa Teks atas/bawah) -->
+                    <!-- Upload Tanda Tangan Digital -->
                     ${signatureBase64 ? `<img src="${signatureBase64}" class="absolute bottom-[-5px] h-24 object-contain opacity-95 z-30 pointer-events-none scale-110" style="mix-blend-mode: multiply;" crossorigin="anonymous">` : ''}
                     
                     <div class="border-b border-current w-full pb-0.5 font-bold ${theme.accentText} uppercase tracking-wider relative z-10 mt-14">
@@ -1144,6 +1272,9 @@
           localStorage.setItem('finance_receipts', JSON.stringify(savedReceipts));
           renderTable();
           renderKonfirmasiTable();
+          if(document.getElementById('laporan-panel').classList.contains('hidden') === false) {
+             renderLaporan();
+          }
           if(!silent) alert(`Sinkronisasi berhasil! Ditemukan ${savedReceipts.length} data.`);
         } else {
           if(!silent) alert(`Gagal: ${result.message}`);
@@ -1221,6 +1352,9 @@
 
         renderTable();
         renderKonfirmasiTable();
+        if(document.getElementById('laporan-panel').classList.contains('hidden') === false) {
+             renderLaporan();
+        }
       } catch (error) {
         console.error("Error saving data:", error);
         alert("Gagal menyimpan ke server: " + error.message);
@@ -1354,7 +1488,7 @@
       
       tbody.innerHTML = '';
 
-      const filteredData = savedReceipts.filter(r => {
+      let filteredData = savedReceipts.filter(r => {
         if (currentStatusFilter !== 'Semua') {
             const rowStatus = r.status || '';
             if (currentStatusFilter === 'Kosong') {
@@ -1370,38 +1504,226 @@
                (r.nama_santri && r.nama_santri.toLowerCase().includes(searchTerm));
       });
 
+      // SORT DESCENDING BY DATE
+      filteredData.sort((a, b) => parseDateString(b.tanggal) - parseDateString(a.tanggal));
+
       if(filteredData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400 italic">Belum ada data kwitansi yang ditemukan untuk filter ini.</td></tr>`;
         return;
       }
 
-      filteredData.forEach((row, idx) => {
-        let statusText = row.status || 'Kosong';
-        let statusColor = "bg-slate-100 text-slate-600";
-        if(row.status === 'Terkonfirmasi') statusColor = "bg-emerald-100 text-emerald-700";
-        else if(row.status === 'Tertolak') statusColor = "bg-red-100 text-red-700";
-        else if(row.status === 'Ganda') statusColor = "bg-amber-100 text-amber-700";
-        else if(row.status === 'Lainnya') statusColor = "bg-purple-100 text-purple-700";
-
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition-colors";
-        tr.innerHTML = `
-          <td class="text-[10px] md:text-xs whitespace-nowrap">${formatDateIndo(row.tanggal)}</td>
-          <td class="font-mono text-[10px] md:text-xs font-semibold text-blue-600">${row.id_tagihan}</td>
-          <td>
-            <div class="font-semibold text-slate-800 text-[10px] md:text-xs">${row.nama_wali}</div>
-            <div class="text-[9px] md:text-[10px] text-slate-500">${row.nama_santri} ${row.kelas ? '('+row.kelas+')' : ''}</div>
-          </td>
-          <td class="text-[10px] md:text-xs max-w-[120px] md:max-w-[150px] truncate" title="${row.jenis_pembayaran}">${row.jenis_pembayaran}</td>
-          <td class="font-bold text-slate-700 text-[10px] md:text-xs">${formatRupiah(row.nominal)}</td>
-          <td><span class="px-1.5 md:px-2 py-0.5 md:py-1 text-[8px] md:text-[10px] font-bold rounded uppercase ${statusColor}">${statusText}</span></td>
-          <td class="text-right whitespace-nowrap">
-            <button onclick="loadReceiptData('${row.id_tagihan}')" class="text-[10px] md:text-xs bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 px-2 md:px-3 py-1 md:py-1.5 rounded shadow-sm transition-colors">Buka</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
+      // GROUPING LOGIC
+      const groupedData = {};
+      filteredData.forEach(r => {
+          const dateObj = parseDateString(r.tanggal);
+          const my = getMonthYearStr(dateObj);
+          if(!groupedData[my]) {
+              groupedData[my] = { records: [], total: 0 };
+          }
+          groupedData[my].records.push(r);
+          groupedData[my].total += (parseFloat(r.nominal) || 0);
       });
+
+      // RENDER
+      for(const [month, data] of Object.entries(groupedData)) {
+          // Month Header Row
+          const headerTr = document.createElement('tr');
+          headerTr.className = "bg-blue-50/80 border-y border-blue-200";
+          headerTr.innerHTML = `<td colspan="7" class="py-2.5 px-4 font-bold text-blue-800 text-xs">
+            <div class="flex justify-between items-center">
+              <span>📅 ${month}</span>
+              <span class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] shadow-sm">Total: ${formatRupiah(data.total)}</span>
+            </div>
+          </td>`;
+          tbody.appendChild(headerTr);
+
+          // Records Rows
+          data.records.forEach(row => {
+            let statusText = row.status || 'Kosong';
+            let statusColor = "bg-slate-100 text-slate-600";
+            if(row.status === 'Terkonfirmasi') statusColor = "bg-emerald-100 text-emerald-700";
+            else if(row.status === 'Tertolak') statusColor = "bg-red-100 text-red-700";
+            else if(row.status === 'Ganda') statusColor = "bg-amber-100 text-amber-700";
+            else if(row.status === 'Lainnya') statusColor = "bg-purple-100 text-purple-700";
+
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50 transition-colors";
+            tr.innerHTML = `
+              <td class="text-[10px] md:text-xs whitespace-nowrap pl-6 border-l-2 border-l-blue-300">${formatDateIndo(row.tanggal)}</td>
+              <td class="font-mono text-[10px] md:text-xs font-semibold text-blue-600">${row.id_tagihan}</td>
+              <td>
+                <div class="font-semibold text-slate-800 text-[10px] md:text-xs">${row.nama_wali}</div>
+                <div class="text-[9px] md:text-[10px] text-slate-500">${row.nama_santri} ${row.kelas ? '('+row.kelas+')' : ''}</div>
+              </td>
+              <td class="text-[10px] md:text-xs max-w-[120px] md:max-w-[150px] truncate" title="${row.jenis_pembayaran}">${row.jenis_pembayaran}</td>
+              <td class="font-bold text-slate-700 text-[10px] md:text-xs">${formatRupiah(row.nominal)}</td>
+              <td><span class="px-1.5 md:px-2 py-0.5 md:py-1 text-[8px] md:text-[10px] font-bold rounded uppercase ${statusColor}">${statusText}</span></td>
+              <td class="text-right whitespace-nowrap">
+                <button onclick="loadReceiptData('${row.id_tagihan}')" class="text-[10px] md:text-xs bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 px-2 md:px-3 py-1 md:py-1.5 rounded shadow-sm transition-colors">Buka</button>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+      }
       lucide.createIcons();
+    }
+
+    // --- Laporan & Chart Logic ---
+    function renderLaporan() {
+        const confirmedData = savedReceipts.filter(r => r.status === 'Terkonfirmasi');
+        
+        let totalSemua = 0;
+        let totalBulanIni = 0;
+        const currentMonthYear = getMonthYearStr(new Date());
+
+        const monthGroups = {};
+
+        confirmedData.forEach(r => {
+            const nom = parseFloat(r.nominal) || 0;
+            totalSemua += nom;
+            
+            const my = getMonthYearStr(parseDateString(r.tanggal));
+            if(my === currentMonthYear) {
+                totalBulanIni += nom;
+            }
+
+            if(!monthGroups[my]) monthGroups[my] = 0;
+            monthGroups[my] += nom;
+        });
+
+        document.getElementById('lap-total-bulan').innerText = formatRupiah(totalBulanIni);
+        document.getElementById('lap-total-semua').innerText = formatRupiah(totalSemua);
+
+        const lapLabelBulan = document.getElementById('lap-label-bulan');
+        if(lapLabelBulan) lapLabelBulan.innerText = `PENDAPATAN BULAN INI (${currentMonthYear.toUpperCase()})`;
+
+        // Tampilkan list rekening keseluruhan secara default
+        renderRekeningList(null, confirmedData);
+
+        // Render Chart
+        const ctx = document.getElementById('chartIncome').getContext('2d');
+        if(incomeChartInstance) incomeChartInstance.destroy();
+
+        const sortedMonths = Object.keys(monthGroups).sort((a, b) => {
+             const getD = str => {
+                const [m, y] = str.split(' ');
+                return new Date(`${y}-${String(monthList.indexOf(m) + 1).padStart(2, '0')}-01`);
+             };
+             return getD(a) - getD(b);
+        });
+
+        const labels = sortedMonths;
+        const dataNominal = labels.map(l => monthGroups[l]);
+
+        incomeChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Pendapatan (Rp)',
+                    data: dataNominal,
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)', // blue-600
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    hoverBackgroundColor: 'rgba(5, 150, 105, 0.8)' // emerald-600
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (event, elements) => {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const clickedMonth = labels[index];
+                        renderRekeningList(clickedMonth, confirmedData);
+                    } else {
+                        // Jika diklik di luar batang grafik, reset filter
+                        renderRekeningList(null, confirmedData);
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                if(value >= 1000000) return 'Rp ' + (value/1000000).toFixed(1) + 'Jt';
+                                return 'Rp ' + (value/1000).toFixed(0) + 'k';
+                            },
+                            font: { size: 10 }
+                        },
+                        grid: { borderDash: [2, 4], color: '#e2e8f0' }
+                    },
+                    x: {
+                        ticks: { font: { size: 10 } },
+                        grid: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return formatRupiah(context.raw);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Render list rekening berdasarkan filter bulan
+    function renderRekeningList(selectedMonth, confirmedData) {
+        const rekGroups = {};
+        let totalRek = 0;
+
+        confirmedData.forEach(r => {
+            const my = getMonthYearStr(parseDateString(r.tanggal));
+            if (selectedMonth === null || selectedMonth === my) {
+                const nom = parseFloat(r.nominal) || 0;
+                const rek = r.rekening || 'Kas Tunai / Tanpa Rekening';
+                if(!rekGroups[rek]) rekGroups[rek] = 0;
+                rekGroups[rek] += nom;
+                totalRek += nom;
+            }
+        });
+
+        const titleEl = document.getElementById('lap-rek-title');
+        if(titleEl) {
+            if (selectedMonth) {
+                titleEl.innerHTML = `Klasifikasi: <span class="text-blue-600">${selectedMonth}</span> 
+                <button onclick="renderRekeningList(null, savedReceipts.filter(r => r.status === 'Terkonfirmasi'))" class="ml-2 text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-0.5 rounded-full text-slate-600 transition-colors">Reset</button>`;
+            } else {
+                titleEl.innerHTML = `Klasifikasi Keseluruhan`;
+            }
+        }
+
+        const rekList = document.getElementById('lap-rekening-list');
+        rekList.innerHTML = '';
+        
+        const rekSorted = Object.entries(rekGroups).sort((a, b) => b[1] - a[1]);
+        
+        if(rekSorted.length === 0) {
+            rekList.innerHTML = '<p class="text-xs text-slate-400 italic text-center mt-4">Tidak ada data untuk periode ini.</p>';
+        } else {
+            rekSorted.forEach(([rek, nom]) => {
+                const percent = totalRek > 0 ? ((nom / totalRek) * 100).toFixed(1) : 0;
+                rekList.innerHTML += `
+                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl mb-3 shadow-sm hover:border-blue-200 transition-colors">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-xs font-bold text-slate-700 truncate pr-2" title="${rek}">${rek}</span>
+                            <span class="text-xs font-black text-emerald-600 whitespace-nowrap">${formatRupiah(nom)}</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-1.5">
+                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: ${percent}%"></div>
+                        </div>
+                        <div class="text-[9px] text-slate-400 mt-1 text-right">${percent}% dari total (${selectedMonth || 'Semua'})</div>
+                    </div>
+                `;
+            });
+        }
     }
 
     function loadReceiptData(id_tagihan) {
