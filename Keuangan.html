@@ -60,7 +60,7 @@
       }
       
       /* Reset Container Pembungkus agar menjadi kanvas murni */
-      #main-content, #generator-panel, #preview-section, #preview-viewport, #preview-container { 
+      #main-content, #generator-panel, #preview-viewport, #preview-container { 
         display: block !important; 
         position: static !important;
         margin: 0 !important; 
@@ -191,9 +191,35 @@
       opacity: 0;
       pointer-events: none;
     }
+
+    /* Collapse Form Desktop */
+    @media (min-width: 1024px) {
+        .desktop-form-collapsed {
+            width: 0 !important;
+            min-width: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+            border-right-width: 0 !important;
+            opacity: 0 !important;
+            overflow: hidden !important;
+            flex-shrink: 1 !important;
+        }
+    }
   </style>
 </head>
 <body class="h-screen flex overflow-hidden">
+
+  <!-- ================= CUSTOM MODAL (PENGGANTI ALERT) ================= -->
+  <div id="custom-modal" class="hidden fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center transition-opacity duration-300 opacity-0">
+    <div class="bg-white rounded-2xl p-6 max-w-sm w-full mx-4 shadow-2xl transform scale-95 transition-transform duration-300" id="custom-modal-content">
+      <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2"></h3>
+      <p id="modal-message" class="text-sm text-slate-600 mb-6 whitespace-pre-line"></p>
+      <div class="flex justify-end gap-3" id="modal-buttons">
+        <button id="modal-btn-cancel" class="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors hidden">Batal</button>
+        <button id="modal-btn-ok" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md">OK</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ================= SPLASH & LOGIN OVERLAY ================= -->
   <div id="auth-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center transition-opacity duration-700">
@@ -252,6 +278,9 @@
       <button onclick="switchTab('konfirmasi')" id="nav-konfirmasi" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors">
         <i data-lucide="check-square" class="w-4 h-4"></i> Konfirmasi Pembayaran
       </button>
+      <button onclick="switchTab('pengingat')" id="nav-pengingat" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors">
+        <i data-lucide="bell-ring" class="w-4 h-4"></i> Pengingat Tagihan SPP
+      </button>
       <button onclick="switchTab('manajemen')" id="nav-manajemen" class="w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors">
         <i data-lucide="database" class="w-4 h-4"></i> Data Tersimpan
       </button>
@@ -288,6 +317,11 @@
         </h2>
       </div>
       <div class="flex items-center gap-2 md:gap-3" id="topbar-actions">
+        <!-- Ikon Toggle Form (Komputer) -->
+        <button onclick="toggleForm()" class="hidden lg:flex px-2 py-2 text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-lg transition-colors print-hidden items-center justify-center" title="Sembunyikan/Tampilkan Formulir">
+          <i data-lucide="panel-left-close" id="toggle-form-icon" class="w-4 h-4 md:w-5 md:h-5"></i>
+        </button>
+
         <!-- Ikon Toggle Preview (Mata) -->
         <button onclick="togglePreview()" class="px-2 py-2 text-slate-500 hover:text-blue-600 bg-slate-100 hover:bg-blue-50 border border-slate-200 rounded-lg transition-colors print-hidden" title="Sembunyikan/Tampilkan Preview">
           <i data-lucide="eye-off" id="toggle-preview-icon" class="w-4 h-4 md:w-5 md:h-5"></i>
@@ -310,27 +344,24 @@
     <!-- TAB: GENERATOR -->
     <div id="generator-panel" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
       
-      <!-- PREVIEW WRAPPER (ATAS pada Mobile, KANAN pada Desktop) -->
-      <div id="preview-section" class="order-1 lg:order-2 flex-none lg:flex-1 w-full h-[45vh] lg:h-auto bg-slate-800 relative transition-all duration-300 border-b border-slate-700 lg:border-b-0">
-        
-        <!-- Zoom Controls (Absolute terhadap wrapper agar tidak ikut scroll) -->
+      <!-- PREVIEW (ATAS pada Mobile, KANAN pada Desktop) -->
+      <!-- Menggunakan flex-none dan tinggi fix di HP agar area form leluasa di scroll -->
+      <div id="preview-section" class="order-1 lg:order-2 flex-none lg:flex-1 w-full h-[45vh] lg:h-auto bg-slate-800 overflow-auto p-4 md:p-8 flex items-start justify-center custom-scrollbar relative transition-all duration-300 border-b border-slate-700 lg:border-b-0">
+        <!-- Zoom Controls -->
         <div id="zoom-controls" class="absolute bottom-4 right-4 md:bottom-6 md:right-6 flex gap-2 print-hidden bg-slate-900/80 p-2 rounded-xl backdrop-blur-sm border border-slate-700 shadow-2xl z-20">
           <button onclick="setZoom(-0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-out" class="w-3 h-3 md:w-4 md:h-4"></i></button>
           <button onclick="resetZoom()" class="text-white hover:text-blue-400 p-1.5 text-[10px] md:text-xs font-bold w-8 md:w-10 text-center" id="zoom-level">100%</button>
           <button onclick="setZoom(0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-in" class="w-3 h-3 md:w-4 md:h-4"></i></button>
         </div>
 
-        <!-- Scrollable Viewport Khusus Untuk Kertas Preview -->
-        <div id="preview-viewport" class="w-full h-full overflow-auto p-4 md:p-8 custom-scrollbar">
-            <!-- Kertas Kwitansi (Absolute Rigid A5 Shape) -->
-            <div id="preview-container" class="mx-auto transition-transform duration-300 origin-top-left">
-              <!-- Konten Kwitansi di-inject via JS -->
-            </div>
+        <!-- Kertas Kwitansi (Absolute Rigid A5 Shape) -->
+        <div id="preview-container" class="transition-transform duration-300 origin-top flex items-center justify-center">
+          <!-- Konten Kwitansi di-inject via JS -->
         </div>
-
       </div>
 
       <!-- FORM INPUT (BAWAH pada Mobile, KIRI pada Desktop) -->
+      <!-- Diatur menggunakan flex-1 agar mengisi sisa tinggi layar dan di-scroll tanpa batas -->
       <div id="form-panel" class="order-2 lg:order-1 print-hidden w-full lg:w-[400px] xl:w-[450px] bg-white lg:border-r border-slate-200 flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 relative transition-all duration-300">
         
         <div class="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b border-slate-100">
@@ -374,6 +405,18 @@
                 <option value="Lainnya">Lainnya</option>
               </select>
             </div>
+          </div>
+
+          <!-- Tambahan Form Email dan Link Pembayaran -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+             <div class="input-group">
+                <label>Email Wali (Opsional)</label>
+                <input type="email" id="f_email" class="input-field" placeholder="contoh@gmail.com" oninput="updatePreview()">
+             </div>
+             <div class="input-group">
+                <label>Bukti / Link Bayar (Otomatis QR)</label>
+                <input type="url" id="f_link_bayar" class="input-field text-blue-600" placeholder="https://..." oninput="updatePreview()">
+             </div>
           </div>
 
           <div class="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-200 space-y-3 md:space-y-4">
@@ -471,8 +514,6 @@
 
           <!-- Hidden Metadata Data Sheet Requirements -->
           <input type="hidden" id="f_id_sheet" value="">
-          <input type="hidden" id="f_email" value="">
-          <input type="hidden" id="f_bukti" value="">
 
         </form>
       </div>
@@ -629,6 +670,38 @@
       </div>
     </div>
 
+    <!-- TAB: PENGINGAT TAGIHAN TUNGGAKAN -->
+    <div id="pengingat-panel" class="hidden flex-1 flex flex-col bg-slate-50 overflow-hidden">
+      <div class="p-4 md:p-6 bg-white border-b border-slate-200">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2">
+          <h3 class="text-lg font-bold text-slate-800">Pengingat Tagihan SPP & PPDB</h3>
+          <button onclick="fetchTunggakan()" class="w-full md:w-auto px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
+            <i data-lucide="download-cloud" class="w-3.5 h-3.5"></i> Ambil Data Tunggakan
+          </button>
+        </div>
+        <p class="text-xs md:text-sm text-slate-500 mb-2">Daftar santri aktif yang memiliki tunggakan ditarik langsung dari "Database SPP". Anda dapat mengirim pesan WA pengingat secara langsung.</p>
+      </div>
+      <div class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto custom-scrollbar">
+          <table class="w-full data-table min-w-[800px]">
+            <thead>
+              <tr>
+                <th>Nama Santri / Kelas</th>
+                <th>Tunggakan SPP</th>
+                <th>Tunggakan PPDB</th>
+                <th class="text-emerald-700">Total Tagihan</th>
+                <th>No. WA Wali</th>
+                <th class="text-right">Kirim Pengingat</th>
+              </tr>
+            </thead>
+            <tbody id="pengingat-table-body">
+              <tr><td colspan="6" class="text-center py-8 text-slate-400 italic">Silakan klik "Ambil Data Tunggakan" untuk memuat daftar santri.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- SCRIPTS -->
@@ -709,12 +782,47 @@
     let signatureBase64 = localStorage.getItem('app_signature') || '';
     let incomeChartInstance = null;
     let isPreviewVisible = true;
+    let tunggakanData = [];
 
     // Data Bulan
     const monthList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     // Initialize Lucide Icons
     lucide.createIcons();
+
+    // --- MODAL UTILS (Pengganti Alert & Confirm) ---
+    function showModal(title, message, type = 'alert', onConfirm = null) {
+      const modal = document.getElementById('custom-modal');
+      const content = document.getElementById('custom-modal-content');
+      document.getElementById('modal-title').innerText = title;
+      document.getElementById('modal-message').innerText = message;
+      
+      const btnCancel = document.getElementById('modal-btn-cancel');
+      const btnOk = document.getElementById('modal-btn-ok');
+      
+      if(type === 'confirm') {
+        btnCancel.classList.remove('hidden');
+        btnCancel.onclick = closeModal;
+        btnOk.onclick = () => { closeModal(); if(onConfirm) onConfirm(); };
+      } else {
+        btnCancel.classList.add('hidden');
+        btnOk.onclick = closeModal;
+      }
+      
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        content.classList.remove('scale-95');
+      }, 10);
+    }
+
+    function closeModal() {
+      const modal = document.getElementById('custom-modal');
+      const content = document.getElementById('custom-modal-content');
+      modal.classList.add('opacity-0');
+      content.classList.add('scale-95');
+      setTimeout(() => { modal.classList.add('hidden'); }, 300);
+    }
 
     // --- Toggle Preview Function (Icon Mata) ---
     function togglePreview() {
@@ -732,6 +840,30 @@
           icon.setAttribute('data-lucide', 'eye');
       }
       lucide.createIcons();
+    }
+
+    // --- Toggle Form Function (Komputer) ---
+    function toggleForm() {
+      const formPanel = document.getElementById('form-panel');
+      const icon = document.getElementById('toggle-form-icon');
+      
+      isFormVisible = !isFormVisible;
+      
+      if (isFormVisible) {
+          formPanel.classList.remove('desktop-form-collapsed');
+          icon.setAttribute('data-lucide', 'panel-left-close');
+      } else {
+          formPanel.classList.add('desktop-form-collapsed');
+          icon.setAttribute('data-lucide', 'panel-left');
+      }
+      lucide.createIcons();
+
+      // Animasi transisi ukuran perlahan agar zoom menyesuaikan dengan mulus
+      let start = Date.now();
+      let timer = setInterval(() => {
+          autoZoom();
+          if (Date.now() - start > 350) clearInterval(timer);
+      }, 16);
     }
 
     // --- Cetak PDF Handler ---
@@ -798,10 +930,10 @@
     }
 
     function handleLogout() {
-      if(confirm("Anda yakin ingin keluar dari sesi?")) {
+      showModal("Konfirmasi Keluar", "Anda yakin ingin keluar dari sesi?", "confirm", () => {
         localStorage.removeItem('finance_auth_valid');
         location.reload();
-      }
+      });
     }
 
     document.getElementById('login-password').addEventListener('keypress', function(e) {
@@ -894,6 +1026,7 @@
       document.getElementById('konfirmasi-panel').classList.toggle('hidden', tabId !== 'konfirmasi');
       document.getElementById('manajemen-panel').classList.toggle('hidden', tabId !== 'manajemen');
       document.getElementById('laporan-panel').classList.toggle('hidden', tabId !== 'laporan');
+      document.getElementById('pengingat-panel').classList.toggle('hidden', tabId !== 'pengingat');
       
       const activeClass = "w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-blue-900/20";
       const inactiveClass = "w-full flex items-center gap-3 px-4 py-3 text-slate-300 hover:bg-slate-800 rounded-xl font-medium text-sm transition-colors";
@@ -902,11 +1035,13 @@
       document.getElementById('nav-konfirmasi').className = tabId === 'konfirmasi' ? activeClass : inactiveClass;
       document.getElementById('nav-manajemen').className = tabId === 'manajemen' ? activeClass : inactiveClass;
       document.getElementById('nav-laporan').className = tabId === 'laporan' ? activeClass : inactiveClass;
+      document.getElementById('nav-pengingat').className = tabId === 'pengingat' ? activeClass : inactiveClass;
 
       let titleHTML = '';
       if(tabId === 'generator') titleHTML = '<i data-lucide="file-signature" class="w-5 h-5 text-blue-600"></i> Generator Kwitansi';
       else if(tabId === 'konfirmasi') titleHTML = '<i data-lucide="check-square" class="w-5 h-5 text-blue-600"></i> Konfirmasi Pembayaran';
       else if(tabId === 'laporan') titleHTML = '<i data-lucide="bar-chart-2" class="w-5 h-5 text-blue-600"></i> Laporan Keuangan';
+      else if(tabId === 'pengingat') titleHTML = '<i data-lucide="bell-ring" class="w-5 h-5 text-blue-600"></i> Pengingat Tagihan SPP';
       else titleHTML = '<i data-lucide="database" class="w-5 h-5 text-blue-600"></i> Manajemen Data';
       
       document.getElementById('page-title').innerHTML = titleHTML;
@@ -1042,27 +1177,15 @@
 
     function autoZoom() {
       const viewport = document.getElementById('preview-viewport');
-      if(viewport && viewport.offsetParent !== null) {
+      if(viewport && !viewport.classList.contains('hidden')) {
         const paperWidth = 794; // Ukuran pixel konversi dari 210mm
         const paperHeight = 559; // Ukuran pixel konversi dari 148mm
+        const padding = window.innerWidth < 768 ? 32 : 64; 
         
-        const computedStyle = window.getComputedStyle(viewport);
-        const paddingX = parseFloat(computedStyle.paddingLeft) + parseFloat(computedStyle.paddingRight);
-        const paddingY = parseFloat(computedStyle.paddingTop) + parseFloat(computedStyle.paddingBottom);
-
-        const availableWidth = viewport.clientWidth - paddingX;
-        const availableHeight = viewport.clientHeight - paddingY;
+        const scaleW = (viewport.clientWidth - padding) / paperWidth;
+        const scaleH = (viewport.clientHeight - padding) / paperHeight;
         
-        const scaleW = availableWidth / paperWidth;
-        const scaleH = availableHeight / paperHeight;
-        
-        if (window.innerWidth < 768) {
-           zoom = scaleW; 
-           if (zoom > 1) zoom = 1;
-        } else {
-           zoom = Math.min(scaleW, scaleH, 1.2); 
-        }
-        
+        zoom = Math.min(scaleW, scaleH, 1.2); 
         applyZoom();
       }
     }
@@ -1123,6 +1246,8 @@
       document.getElementById('f_id_tagihan').value = generateTrxID();
       document.getElementById('f_tanggal').value = "2025-08-25";
       document.getElementById('f_status').value = "Terkonfirmasi";
+      document.getElementById('f_email').value = "ortu@example.com";
+      document.getElementById('f_link_bayar').value = "https://drive.google.com/open?id=1P7Zud7s3OpzgJJ8kIsKBwPT53jZxv9Pg";
       document.getElementById('f_nama_wali').value = "Parwansyah Amrato";
       document.getElementById('f_wa').value = "6282293337089";
       document.getElementById('f_nama_santri').value = "Auliana Abdurahman Balise";
@@ -1145,6 +1270,9 @@
         id_tagihan: document.getElementById('f_id_tagihan').value,
         tanggal: document.getElementById('f_tanggal').value,
         status: document.getElementById('f_status').value,
+        email: document.getElementById('f_email') ? document.getElementById('f_email').value : "",
+        link_bayar: document.getElementById('f_link_bayar') ? document.getElementById('f_link_bayar').value : "",
+        bukti: document.getElementById('f_link_bayar') ? document.getElementById('f_link_bayar').value : "",
         nama_wali: document.getElementById('f_nama_wali').value,
         wa: document.getElementById('f_wa').value,
         nama_santri: document.getElementById('f_nama_santri').value,
@@ -1239,6 +1367,10 @@
               <!-- Footer Nominal & Tanda Tangan -->
               <div class="mt-2 flex justify-between items-end relative z-10 flex-shrink-0">
                 <div class="w-[45%] min-w-[200px]">
+                  
+                  <!-- Barcode QR di atas Total Pembayaran (Otomatis Generate jika ada URL) -->
+                  ${data.link_bayar ? `<div class="mb-1.5 flex justify-start"><img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.link_bayar)}&margin=1" class="h-16 w-16 object-contain border border-slate-200 rounded bg-white p-1 shadow-sm" crossorigin="anonymous"></div>` : ''}
+
                   <div class="text-[10px] font-semibold uppercase opacity-70 mb-0.5">Total Pembayaran:</div>
                   <div class="text-xl px-3 py-1.5 ${theme.amountBox}">
                     ${formattedNominal}
@@ -1259,8 +1391,8 @@
                       Penerima / Bendahara
                     </div>
 
-                    <!-- Cap Stempel Paten -->
-                    <img src="${STAMP_URL}" class="absolute bottom-[-15px] left-[-45px] h-[120px] object-contain opacity-85 z-20 -rotate-12 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
+                    <!-- Cap Stempel Paten (Digeser ke kanan agar kena nama) -->
+                    <img src="${STAMP_URL}" class="absolute bottom-[-15px] left-[5px] h-[120px] object-contain opacity-85 z-20 -rotate-12 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
                     
                     <!-- Upload Tanda Tangan Digital -->
                     ${signatureBase64 ? `<img src="${signatureBase64}" class="absolute bottom-[-5px] h-24 object-contain opacity-95 z-30 pointer-events-none scale-110" style="mix-blend-mode: multiply;" crossorigin="anonymous">` : ''}
@@ -1774,6 +1906,8 @@
 
         document.getElementById('f_status').value = data.status || '';
         document.getElementById('f_nama_wali').value = data.nama_wali || '';
+        if(document.getElementById('f_email')) document.getElementById('f_email').value = data.email || '';
+        if(document.getElementById('f_link_bayar')) document.getElementById('f_link_bayar').value = data.bukti || data.link_bayar || '';
         document.getElementById('f_wa').value = data.wa || '';
         document.getElementById('f_nama_santri').value = data.nama_santri || '';
         document.getElementById('f_kelas').value = data.kelas || '';
@@ -1794,14 +1928,132 @@
     }
 
     function resetForm() {
-      if(confirm('Kosongkan semua form input?')) {
+      showModal('Konfirmasi', 'Kosongkan semua form input?', 'confirm', () => {
         document.getElementById('kwitansi-form').reset();
         document.getElementById('f_id_tagihan').value = generateTrxID();
         document.getElementById('f_tanggal').valueAsDate = new Date();
         document.getElementById('f_terbilang').value = "";
         setBulanCheckboxes("");
         updatePreview();
+      });
+    }
+
+    // --- FETCH DATA TUNGGAKAN (DATABASE SPP) ---
+    async function fetchTunggakan() {
+      const webhookUrl = APP_WEBHOOK_URL;
+      const apiKey = API_KEY;
+      const tbody = document.getElementById('pengingat-table-body');
+
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto text-blue-500 mb-2"></i> Mengambil data dari server...</td></tr>`;
+      lucide.createIcons();
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: "getTunggakan", api_key: apiKey })
+        });
+        
+        const result = await response.json();
+        
+        if (result.status === 'success') {
+          tunggakanData = result.data;
+          renderTunggakanTable();
+        } else {
+          showModal("Gagal", `Gagal mengambil data tunggakan: ${result.message}`);
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 italic">Gagal memuat data.</td></tr>`;
+        }
+      } catch (error) {
+        console.error(error);
+        showModal("Kesalahan Jaringan", "Koneksi gagal. Pastikan aplikasi sedang online.");
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-red-500 italic">Terjadi kesalahan jaringan.</td></tr>`;
       }
+    }
+
+    function renderTunggakanTable() {
+      const tbody = document.getElementById('pengingat-table-body');
+      tbody.innerHTML = '';
+
+      if (!tunggakanData || tunggakanData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-slate-400 italic">Tidak ada data santri yang menunggak saat ini.</td></tr>`;
+        return;
+      }
+
+      tunggakanData.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        
+        tr.innerHTML = `
+          <td>
+            <div class="font-semibold text-slate-800 text-[10px] md:text-xs">${row.nama}</div>
+            <div class="text-[9px] md:text-[10px] text-slate-500">Kelas: ${row.jenjang}</div>
+          </td>
+          <td class="font-semibold text-slate-600 text-[10px] md:text-xs">${formatRupiah(row.tunggakan_spp)}</td>
+          <td class="font-semibold text-slate-600 text-[10px] md:text-xs">${formatRupiah(row.tunggakan_ppdb)}</td>
+          <td class="font-bold text-emerald-700 text-[10px] md:text-xs">${formatRupiah(row.total_tunggakan)}</td>
+          <td class="font-mono text-[10px] md:text-xs text-blue-600">${row.wa}</td>
+          <td class="text-right whitespace-nowrap">
+            <button onclick="kirimPesanPengingat(${idx}, this)" class="text-[10px] md:text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 md:px-3 py-1.5 rounded shadow-sm transition-colors flex items-center gap-1 ml-auto">
+              <i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Kirim WA
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    async function kirimPesanPengingat(index, btnElement) {
+        const data = tunggakanData[index];
+        const webhookUrl = APP_WEBHOOK_URL;
+        const apiKey = API_KEY;
+
+        const pesan = `Assalamu’alaikum warahmatullahi wabarakatuh,
+Ayah/Bunda dari ananda *${data.nama}* (Kelas: ${data.jenjang}).
+
+Kami informasikan bahwa terdapat tagihan administrasi yang belum diselesaikan dengan rincian:
+- Tunggakan SPP: ${formatRupiah(data.tunggakan_spp)}
+- Tunggakan PPDB: ${formatRupiah(data.tunggakan_ppdb)}
+*Total Tagihan: ${formatRupiah(data.total_tunggakan)}*
+
+Mohon bantuannya untuk segera melakukan pelunasan. Abaikan pesan ini jika Ayah/Bunda sudah melakukan pembayaran.
+Terima kasih. 🙏`;
+
+        showModal('Konfirmasi Pengiriman', `Kirim pengingat ke WA: ${data.wa}?\n\nPesan:\n${pesan}`, 'confirm', async () => {
+            const originalHtml = btnElement.innerHTML;
+            btnElement.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Mengirim...`;
+            btnElement.disabled = true;
+
+            try {
+              const response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    action: "sendReminder", 
+                    api_key: apiKey,
+                    wa: data.wa,
+                    message: pesan
+                })
+              });
+              
+              const result = await response.json();
+              if (result.status === 'success') {
+                btnElement.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i> Terkirim`;
+                btnElement.classList.replace('bg-emerald-600', 'bg-blue-600');
+                btnElement.classList.replace('hover:bg-emerald-700', 'hover:bg-blue-700');
+              } else {
+                showModal('Gagal', `Gagal mengirim: ${result.message}`);
+                btnElement.innerHTML = originalHtml;
+                btnElement.disabled = false;
+              }
+            } catch (error) {
+              console.error(error);
+              showModal('Kesalahan Jaringan', "Terjadi kesalahan jaringan saat mengirim WA.");
+              btnElement.innerHTML = originalHtml;
+              btnElement.disabled = false;
+            }
+            lucide.createIcons();
+        });
     }
 
     // Run Initialization
