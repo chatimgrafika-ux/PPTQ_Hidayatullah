@@ -12,7 +12,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Roboto+Slab:wght@400;500;600;700&family=Dancing+Script:wght@700&display=swap');
 
     :root {
       --primary: #0f172a;
@@ -26,38 +26,60 @@
     }
 
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-    /* Print Styles */
+    /* Print Styles - A4 Portrait, Kwitansi A5 Rapat Kiri Atas */
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       @page {
-        size: A5 landscape; /* Standar ukuran kwitansi A5 */
+        size: A4 portrait;
         margin: 0;
       }
-      body { background-color: white; }
-      #sidebar, #topbar, #manajemen-panel, .print-hidden { display: none !important; }
-      #main-content { margin: 0 !important; padding: 0 !important; width: 100% !important; height: 100vh !important; display: flex; align-items: center; justify-content: center; }
+      body { background-color: white; margin: 0; padding: 0; }
+      #sidebar, #topbar, #manajemen-panel, #konfirmasi-panel, .print-hidden, #zoom-controls, #sidebar-overlay { 
+        display: none !important; 
+      }
+      #main-content { 
+        margin: 0 !important; 
+        padding: 0 !important; 
+        width: 100% !important; 
+        display: block !important; 
+      }
+      #generator-panel {
+        display: block !important;
+      }
+      #preview-viewport {
+        padding: 0 !important;
+        margin: 0 !important;
+        display: block !important;
+        background: white !important;
+        overflow: hidden !important;
+      }
       #preview-container { 
         box-shadow: none !important; 
         border: none !important; 
         width: 100% !important; 
-        height: 100% !important; 
+        height: auto !important; 
         transform: none !important;
-        page-break-inside: avoid;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: block !important;
       }
       .kwitansi-paper {
         border: none !important;
         box-shadow: none !important;
-        width: 210mm !important;
-        height: 148mm !important;
+        width: 210mm !important; /* Lebar A4 / A5 */
+        height: 148mm !important; /* Tinggi A5 (Setengah A4) */
         transform: none !important;
-        margin: 0 !important;
+        margin: 0 !important; 
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        page-break-after: avoid;
       }
     }
 
@@ -66,6 +88,7 @@
     .font-serif-elegant { font-family: 'Playfair Display', serif; }
     .font-serif-solid { font-family: 'Roboto Slab', serif; }
     .font-sans-modern { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .font-signature { font-family: 'Dancing Script', cursive; }
 
     /* Paper Effect */
     .kwitansi-paper {
@@ -131,12 +154,21 @@
       letter-spacing: 0.05em;
       padding: 0.75rem 1rem;
       text-align: left;
+      white-space: nowrap;
     }
     .data-table td {
       padding: 0.75rem 1rem;
       border-bottom: 1px solid #e2e8f0;
       font-size: 0.875rem;
       color: #475569;
+    }
+
+    /* Checkbox Styling */
+    .checkbox-month {
+      accent-color: #2563eb;
+      width: 1.1rem;
+      height: 1.1rem;
+      cursor: pointer;
     }
 
     /* Splash Screen Animations */
@@ -149,7 +181,7 @@
 <body class="h-screen flex overflow-hidden">
 
   <!-- ================= SPLASH & LOGIN OVERLAY ================= -->
-  <div id="auth-overlay" class="fixed inset-0 bg-slate-900 z-50 flex flex-col items-center justify-center transition-opacity duration-700">
+  <div id="auth-overlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center transition-opacity duration-700">
     <div class="text-center px-6 w-full max-w-md">
       <div class="w-24 h-24 bg-white/10 p-2 rounded-2xl backdrop-blur-sm mx-auto mb-6 shadow-2xl border border-white/5">
         <img src="https://lh3.googleusercontent.com/d/1C0F6yV63WJH_6bHyhPAKhl-B6Qn4j8Rc" alt="Logo" class="w-full h-full object-contain" crossorigin="anonymous">
@@ -177,19 +209,28 @@
     </div>
   </div>
 
+  <!-- Overlay untuk Sidebar di Mobile -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden md:hidden" onclick="toggleSidebar()"></div>
+
   <!-- ================= SIDEBAR ================= -->
-  <aside id="sidebar" class="w-72 bg-slate-900 text-white flex flex-col transition-all duration-300 z-20 flex-shrink-0 relative">
-    <div class="p-6 border-b border-slate-800 flex items-center gap-3">
-      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
-        <img src="https://lh3.googleusercontent.com/d/1C0F6yV63WJH_6bHyhPAKhl-B6Qn4j8Rc" alt="Logo" class="w-full h-full object-contain" crossorigin="anonymous">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 w-72 bg-slate-900 text-white flex flex-col transition-transform duration-300 z-40 flex-shrink-0">
+    <div class="p-6 border-b border-slate-800 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center p-1">
+          <img src="https://lh3.googleusercontent.com/d/1C0F6yV63WJH_6bHyhPAKhl-B6Qn4j8Rc" alt="Logo" class="w-full h-full object-contain" crossorigin="anonymous">
+        </div>
+        <div>
+          <h1 class="font-bold text-sm leading-tight tracking-wide">FINANCE MGT</h1>
+          <p class="text-[10px] text-slate-400 tracking-wider">Kwitansi & Laporan</p>
+        </div>
       </div>
-      <div>
-        <h1 class="font-bold text-sm leading-tight tracking-wide">FINANCE MGT</h1>
-        <p class="text-[10px] text-slate-400 tracking-wider">Kwitansi & Laporan</p>
-      </div>
+      <!-- Tombol Tutup Sidebar di HP -->
+      <button onclick="toggleSidebar()" class="md:hidden text-slate-400 hover:text-white p-1">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
     </div>
 
-    <nav class="flex-1 p-4 space-y-2">
+    <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
       <button onclick="switchTab('generator')" id="nav-generator" class="w-full flex items-center gap-3 px-4 py-3 bg-blue-600 text-white rounded-xl font-medium text-sm transition-colors shadow-lg shadow-blue-900/20">
         <i data-lucide="pen-tool" class="w-4 h-4"></i> Buat Dokumen
       </button>
@@ -218,17 +259,28 @@
   <main class="flex-1 flex flex-col relative min-w-0" id="main-content">
     
     <!-- TOPBAR -->
-    <header id="topbar" class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 z-10">
-      <h2 id="page-title" class="font-bold text-slate-800 flex items-center gap-2">
-        <i data-lucide="file-signature" class="w-5 h-5 text-blue-600"></i> Generator Kwitansi
-      </h2>
-      <div class="flex items-center gap-3">
-        <button onclick="resetForm()" class="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors print-hidden">Reset</button>
-        <button onclick="saveDataToSheet()" class="px-4 py-2 text-xs font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 rounded-lg transition-colors flex items-center gap-2 print-hidden">
-          <i data-lucide="save" class="w-3.5 h-3.5"></i> Simpan Data
+    <header id="topbar" class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 flex-shrink-0 z-10">
+      <div class="flex items-center gap-2 md:gap-3">
+        <!-- Tombol Menu Mobile -->
+        <button onclick="toggleSidebar()" class="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+          <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
-        <button onclick="window.print()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2 print-hidden">
-          <i data-lucide="printer" class="w-3.5 h-3.5"></i> Cetak PDF/Print
+        <h2 id="page-title" class="font-bold text-slate-800 flex items-center gap-2 text-sm md:text-base">
+          <i data-lucide="file-signature" class="w-5 h-5 text-blue-600"></i> Generator Kwitansi
+        </h2>
+      </div>
+      <div class="flex items-center gap-2 md:gap-3">
+        <button onclick="resetForm()" class="px-3 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors print-hidden flex items-center gap-1" title="Reset Form">
+          <i data-lucide="refresh-ccw" class="w-3.5 h-3.5 md:hidden"></i>
+          <span class="hidden md:inline">Reset</span>
+        </button>
+        <button onclick="saveDataToSheet(event)" class="px-3 py-2 text-xs font-semibold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 border border-emerald-200 rounded-lg transition-colors flex items-center gap-2 print-hidden" title="Simpan Data">
+          <i data-lucide="save" class="w-3.5 h-3.5"></i> 
+          <span class="hidden sm:inline">Simpan</span>
+        </button>
+        <button onclick="window.print()" class="px-3 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2 print-hidden" title="Cetak PDF">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i> 
+          <span class="hidden sm:inline">Cetak</span>
         </button>
       </div>
     </header>
@@ -237,16 +289,16 @@
     <div id="generator-panel" class="flex-1 flex flex-col lg:flex-row overflow-hidden">
       
       <!-- FORM INPUT (KIRI) -->
-      <div class="w-full lg:w-[400px] xl:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-6">
+      <div class="w-full lg:w-[400px] xl:w-[450px] bg-white border-r border-slate-200 flex-shrink-0 overflow-y-auto custom-scrollbar p-4 md:p-6 relative">
         
-        <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">Data Transaksi</h3>
+        <div class="flex items-center justify-between mb-4 md:mb-6 pb-3 md:pb-4 border-b border-slate-100">
+          <h3 class="text-xs md:text-sm font-bold text-slate-800 uppercase tracking-wider">Data Transaksi</h3>
           <button onclick="loadSampleData()" class="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded border border-amber-200 hover:bg-amber-200 transition-colors">Isi Data Sample</button>
         </div>
 
         <form id="kwitansi-form" class="space-y-4 pb-12">
           
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div class="input-group">
               <label>Jenis Dokumen</label>
               <select id="f_jenis_dokumen" class="input-field font-semibold text-slate-800" onchange="updatePreview()">
@@ -258,11 +310,14 @@
             </div>
             <div class="input-group">
               <label>ID Tagihan / No. TRX</label>
-              <input type="text" id="f_id_tagihan" class="input-field" placeholder="TRX-..." oninput="updatePreview()">
+              <div class="flex gap-1">
+                <input type="text" id="f_id_tagihan" class="input-field flex-1 font-mono text-xs font-bold text-blue-600" placeholder="TRX-..." oninput="updatePreview()">
+                <button type="button" onclick="document.getElementById('f_id_tagihan').value=generateTrxID(); updatePreview();" class="bg-blue-50 text-blue-600 border border-blue-200 rounded px-2 hover:bg-blue-100 transition-colors" title="Generate ID Baru"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+              </div>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div class="input-group">
               <label>Tanggal / Timestamp</label>
               <input type="date" id="f_tanggal" class="input-field" onchange="updatePreview()">
@@ -279,12 +334,18 @@
             </div>
           </div>
 
-          <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
-            <div class="input-group">
-              <label>Telah Terima Dari (Wali/Ortu)</label>
-              <input type="text" id="f_nama_wali" class="input-field" placeholder="Nama yang menyerahkan uang" oninput="updatePreview()">
+          <div class="bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-200 space-y-3 md:space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div class="input-group">
+                <label>Telah Terima Dari (Wali/Ortu)</label>
+                <input type="text" id="f_nama_wali" class="input-field font-semibold" placeholder="Nama yang menyerahkan uang" oninput="updatePreview()">
+              </div>
+              <div class="input-group">
+                <label>Nomor WhatsApp</label>
+                <input type="text" id="f_wa" class="input-field" placeholder="Contoh: 62812..." oninput="updatePreview()">
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div class="input-group">
                 <label>Nama Santri</label>
                 <input type="text" id="f_nama_santri" class="input-field" placeholder="Nama Lengkap" oninput="updatePreview()">
@@ -301,48 +362,74 @@
             <input type="text" id="f_jenis_pembayaran" class="input-field" placeholder="Contoh: Sarana (PPDB), SPP, dll" oninput="updatePreview()">
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
-            <div class="input-group">
-              <label>Bulan</label>
-              <input type="text" id="f_bulan" class="input-field" placeholder="Bulan" oninput="updatePreview()">
+          <div class="grid grid-cols-2 gap-3 md:gap-4 relative">
+            <div class="input-group relative" id="bulan_container">
+              <label>Bulan (Multi-Pilih)</label>
+              <!-- Custom Multi Select Dropdown -->
+              <div id="bulan_display" class="input-field min-h-[38px] flex items-center justify-between cursor-pointer" onclick="toggleBulanDropdown(event)">
+                  <span id="bulan_text" class="text-slate-400 text-[11px] md:text-xs truncate">Pilih Bulan...</span>
+                  <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 flex-shrink-0"></i>
+              </div>
+              <input type="hidden" id="f_bulan" value="">
+              
+              <!-- Dropdown Content -->
+              <div id="bulan_dropdown" class="hidden absolute top-full left-0 w-full md:w-[200%] bg-white border border-slate-200 shadow-xl rounded-lg p-3 z-[60] mt-1 origin-top-left">
+                  <div class="grid grid-cols-2 gap-2" id="bulan_checkboxes">
+                    <!-- Diisi via JS -->
+                  </div>
+                  <button type="button" onclick="toggleBulanDropdown(event)" class="mt-3 w-full bg-blue-50 text-blue-600 font-semibold py-1.5 rounded-md text-xs hover:bg-blue-100">Selesai</button>
+              </div>
             </div>
+            
             <div class="input-group">
               <label>Tahun</label>
               <input type="text" id="f_tahun" class="input-field" placeholder="Tahun" oninput="updatePreview()">
             </div>
           </div>
 
-          <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 space-y-4">
+          <div class="bg-emerald-50 p-3 md:p-4 rounded-xl border border-emerald-100 space-y-3 md:space-y-4 shadow-inner">
             <div class="input-group">
               <label>Nominal (Rp)</label>
-              <input type="number" id="f_nominal" class="input-field text-lg font-bold text-emerald-700" placeholder="0" oninput="handleNominalInput()">
+              <input type="number" id="f_nominal" class="input-field text-lg font-bold text-emerald-700" placeholder="0" inputmode="numeric" oninput="handleNominalInput()">
             </div>
             <div class="input-group">
               <label>Terbilang (Otomatis)</label>
-              <textarea id="f_terbilang" rows="2" class="input-field italic text-sm resize-none bg-emerald-100/50" oninput="updatePreview()"></textarea>
+              <textarea id="f_terbilang" rows="2" class="input-field italic text-[11px] md:text-sm resize-none bg-emerald-100/50" oninput="updatePreview()"></textarea>
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 border-t border-slate-100 pt-4">
             <div class="input-group">
-              <label>Metode / Rekening</label>
+              <label>Rekening Pondok</label>
               <input type="text" id="f_rekening" class="input-field" placeholder="Tunai / Transfer BSI..." oninput="updatePreview()">
             </div>
             <div class="input-group">
-              <label>Penerima (Ustadz)</label>
-              <input type="text" id="f_penerima" class="input-field" placeholder="Nama Penerima" oninput="updatePreview()">
+              <label>Nama Penerima (Ustadz)</label>
+              <input type="text" id="f_penerima" class="input-field font-semibold" placeholder="Nama Penerima" oninput="updatePreview()">
+            </div>
+          </div>
+
+          <!-- Tambahan Upload Tanda Tangan -->
+          <div class="input-group bg-slate-50 p-3 rounded-lg border border-slate-200 border-dashed">
+            <div class="flex justify-between items-center mb-1">
+               <label class="mb-0">Tanda Tangan Digital</label>
+               <button type="button" onclick="clearSignature()" class="text-[10px] text-red-500 hover:text-red-700 hidden" id="btn_clear_ttd">Hapus</button>
+            </div>
+            <input type="file" id="f_ttd" accept="image/png, image/jpeg" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onchange="handleSignatureUpload(event)">
+            <p class="text-[9px] text-slate-400 mt-1 italic">Gunakan file berlatar transparan (PNG) untuk hasil terbaik.</p>
+            <div id="ttd_preview_container" class="hidden mt-2 p-2 bg-white border border-slate-100 rounded flex justify-center">
+               <img id="preview_ttd_thumb" class="h-10 object-contain" crossorigin="anonymous">
             </div>
           </div>
 
           <div class="input-group">
             <label>Catatan Tambahan</label>
-            <textarea id="f_catatan" rows="2" class="input-field resize-none" placeholder="Catatan opsional..." oninput="updatePreview()"></textarea>
+            <textarea id="f_catatan" rows="2" class="input-field resize-none text-xs" placeholder="Catatan opsional..." oninput="updatePreview()"></textarea>
           </div>
 
           <!-- Hidden Metadata Data Sheet Requirements -->
           <input type="hidden" id="f_id_sheet" value="">
           <input type="hidden" id="f_email" value="">
-          <input type="hidden" id="f_wa" value="">
           <input type="hidden" id="f_bukti" value="">
 
         </form>
@@ -351,7 +438,7 @@
       <!-- PREVIEW (KANAN) -->
       <div class="flex-1 bg-slate-800 overflow-auto p-4 md:p-8 flex items-start justify-center custom-scrollbar relative" id="preview-viewport">
         <!-- Zoom Controls -->
-        <div class="absolute bottom-6 right-6 flex gap-2 print-hidden bg-slate-900/80 p-2 rounded-xl backdrop-blur-sm border border-slate-700 shadow-2xl z-10">
+        <div id="zoom-controls" class="absolute bottom-6 right-6 flex gap-2 print-hidden bg-slate-900/80 p-2 rounded-xl backdrop-blur-sm border border-slate-700 shadow-2xl z-10">
           <button onclick="setZoom(-0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
           <button onclick="resetZoom()" class="text-white hover:text-blue-400 p-1.5 text-xs font-bold w-10 text-center" id="zoom-level">100%</button>
           <button onclick="setZoom(0.1)" class="text-white hover:text-blue-400 p-1.5"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
@@ -366,24 +453,24 @@
 
     <!-- TAB: KONFIRMASI PEMBAYARAN -->
     <div id="konfirmasi-panel" class="hidden flex-1 flex flex-col bg-slate-50 overflow-hidden">
-      <div class="p-6 bg-white border-b border-slate-200">
-        <div class="flex justify-between items-start mb-2">
+      <div class="p-4 md:p-6 bg-white border-b border-slate-200">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2">
           <h3 class="text-lg font-bold text-slate-800">Konfirmasi Pembayaran Pending</h3>
-          <button onclick="fetchDataFromServer()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+          <button onclick="fetchDataFromServer()" class="w-full md:w-auto px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Reload Data API
           </button>
         </div>
-        <p class="text-sm text-slate-500 mb-4">Daftar transaksi dengan status kosong yang perlu dikonfirmasi. Sesuaikan bulan, tahun, dan penerima sebelum klik konfirmasi.</p>
+        <p class="text-xs md:text-sm text-slate-500 mb-2">Daftar transaksi dengan status kosong yang perlu dikonfirmasi. Sesuaikan bulan, tahun, dan penerima sebelum klik konfirmasi.</p>
       </div>
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <table class="w-full data-table">
+      <div class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto custom-scrollbar">
+          <table class="w-full data-table min-w-[800px]">
             <thead>
               <tr>
                 <th>No. TRX / Timestamp</th>
                 <th>Santri & Pembayaran</th>
                 <th>Nominal</th>
-                <th>Bulan</th>
+                <th>Bulan (Koma)</th>
                 <th>Tahun</th>
                 <th>Penerima</th>
                 <th class="text-center">Bukti</th>
@@ -400,37 +487,36 @@
 
     <!-- TAB: MANAJEMEN -->
     <div id="manajemen-panel" class="hidden flex-1 flex flex-col bg-slate-50 overflow-hidden">
-      <div class="p-6 bg-white border-b border-slate-200">
-        <div class="flex justify-between items-start mb-2">
+      <div class="p-4 md:p-6 bg-white border-b border-slate-200">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-2">
           <h3 class="text-lg font-bold text-slate-800">Manajemen Data Kwitansi</h3>
-          <button id="btn-sync" onclick="fetchDataFromServer()" class="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center gap-2">
+          <button id="btn-sync" onclick="fetchDataFromServer()" class="w-full md:w-auto px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sinkronisasi Database
           </button>
         </div>
-        <p class="text-sm text-slate-500 mb-4">Sinkronisasikan data Anda untuk memperbarui tabel lokal dari Google Sheets.</p>
+        <p class="text-xs md:text-sm text-slate-500 mb-4">Sinkronisasikan data Anda untuk memperbarui tabel lokal dari Google Sheets.</p>
         
         <div class="flex gap-4 mb-4">
           <div class="flex-1 relative">
-            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-slate-400"></i>
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
             <input type="text" id="search-data" placeholder="Cari ID, Nama Wali, Nama Santri..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:border-blue-500" oninput="renderTable()">
           </div>
-          <button onclick="clearAllData()" class="px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors">Hapus Lokal</button>
         </div>
 
         <!-- Filter Status -->
         <div class="flex flex-wrap gap-2 mt-2" id="status-filters">
-          <button onclick="setStatusFilter('Semua')" data-status="Semua" class="filter-btn bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-semibold transition-colors shadow-sm">Semua</button>
-          <button onclick="setStatusFilter('Terkonfirmasi')" data-status="Terkonfirmasi" class="filter-btn bg-white text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Terkonfirmasi</button>
-          <button onclick="setStatusFilter('Tertolak')" data-status="Tertolak" class="filter-btn bg-white text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Tertolak</button>
-          <button onclick="setStatusFilter('Ganda')" data-status="Ganda" class="filter-btn bg-white text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Ganda</button>
-          <button onclick="setStatusFilter('Lainnya')" data-status="Lainnya" class="filter-btn bg-white text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Lainnya</button>
-          <button onclick="setStatusFilter('Kosong')" data-status="Kosong" class="filter-btn bg-white text-slate-600 border border-slate-200 px-4 py-1.5 rounded-full text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Kosong</button>
+          <button onclick="setStatusFilter('Semua')" data-status="Semua" class="filter-btn bg-blue-600 text-white px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold transition-colors shadow-sm">Semua</button>
+          <button onclick="setStatusFilter('Terkonfirmasi')" data-status="Terkonfirmasi" class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Terkonfirmasi</button>
+          <button onclick="setStatusFilter('Tertolak')" data-status="Tertolak" class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Tertolak</button>
+          <button onclick="setStatusFilter('Ganda')" data-status="Ganda" class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Ganda</button>
+          <button onclick="setStatusFilter('Lainnya')" data-status="Lainnya" class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Lainnya</button>
+          <button onclick="setStatusFilter('Kosong')" data-status="Kosong" class="filter-btn bg-white text-slate-600 border border-slate-200 px-3 md:px-4 py-1.5 rounded-full text-[10px] md:text-xs font-semibold hover:bg-slate-50 transition-colors shadow-sm">Kosong</button>
         </div>
       </div>
       
-      <div class="flex-1 overflow-auto p-6">
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <table class="w-full data-table">
+      <div class="flex-1 overflow-auto p-4 md:p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden overflow-x-auto custom-scrollbar">
+          <table class="w-full data-table min-w-[700px]">
             <thead>
               <tr>
                 <th>Timestamp</th>
@@ -457,6 +543,7 @@
     // --- Konfigurasi Images & Assets ---
     const KOP_URL = "https://lh3.googleusercontent.com/d/11WvnHL1fNdsj5NIjGql3FyLa-l2I09YI";
     const LOGO_URL = "https://lh3.googleusercontent.com/d/1C0F6yV63WJH_6bHyhPAKhl-B6Qn4j8Rc";
+    const STAMP_URL = "https://lh3.googleusercontent.com/d/1raStBFIjwXqWftGIXabs9cYCuCwER0i7";
     
     // --- Kredensial API Backend (Disembunyikan dari UI) ---
     const APP_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbxLnTIJOu73YpO-E7kw4kuejRXcmUNGI0IhiBlMpjxJKdSPavNB1vv-oOdsx1YbiOCS7A/exec";
@@ -468,61 +555,56 @@
         id: 0, 
         name: 'Klasik Formal', 
         thumb: 'bg-white border-2 border-slate-300',
-        wrapperClass: 'bg-white border-[10px] border-double border-slate-800 text-slate-900 font-serif-formal',
-        headerBg: '',
-        titleColor: 'text-slate-900 border-b-2 border-slate-900',
+        wrapperClass: 'bg-[#fafaf9] border-[12px] border-double border-slate-800 text-slate-900 font-serif-formal',
+        titleColor: 'text-slate-900 border-b-2 border-slate-900 font-black tracking-widest',
         accentText: 'text-slate-800',
-        tableBorder: 'border-slate-800',
-        boxBg: 'bg-transparent border border-slate-800',
-        amountBox: 'bg-slate-100 border-2 border-slate-800 text-slate-900 font-bold'
+        tableBorder: 'border-slate-800 border-dotted',
+        boxBg: 'bg-transparent border border-slate-800 shadow-sm',
+        amountBox: 'bg-slate-100 border-2 border-slate-800 text-slate-900 font-black drop-shadow'
       },
       {
         id: 1, 
         name: 'Institusi Hijau', 
         thumb: 'bg-emerald-50 border-2 border-emerald-600',
-        wrapperClass: 'bg-[#f8fdfa] border-4 border-emerald-800 text-slate-800 font-sans-modern',
-        headerBg: 'bg-emerald-800 text-white',
-        titleColor: 'text-emerald-800 border-b-4 border-emerald-600',
-        accentText: 'text-emerald-700 font-semibold',
-        tableBorder: 'border-emerald-200',
-        boxBg: 'bg-emerald-50/50 border border-emerald-200 rounded-lg',
-        amountBox: 'bg-emerald-800 text-white font-bold rounded-lg shadow-inner'
+        wrapperClass: 'bg-[#f4fdf8] border-[6px] border-emerald-900 text-slate-800 font-sans-modern ring-2 ring-emerald-900 ring-offset-2',
+        titleColor: 'text-emerald-900 border-b-[3px] border-emerald-700 tracking-wider',
+        accentText: 'text-emerald-800 font-semibold',
+        tableBorder: 'border-emerald-300',
+        boxBg: 'bg-emerald-50 border border-emerald-200 rounded-lg shadow-inner',
+        amountBox: 'bg-emerald-900 text-white font-black rounded-lg shadow-lg'
       },
       {
         id: 2, 
         name: 'Modern Biru', 
         thumb: 'bg-blue-50 border-l-4 border-blue-600',
-        wrapperClass: 'bg-white border-l-[16px] border-blue-700 text-slate-700 font-sans-modern shadow-lg',
-        headerBg: '',
-        titleColor: 'text-blue-800 border-b border-slate-200',
-        accentText: 'text-blue-600 font-semibold',
+        wrapperClass: 'bg-white border-l-[24px] border-blue-700 text-slate-700 font-sans-modern shadow-xl',
+        titleColor: 'text-blue-800 border-b border-slate-200 tracking-widest',
+        accentText: 'text-blue-600 font-bold',
         tableBorder: 'border-slate-200',
         boxBg: 'bg-slate-50 border border-slate-200 rounded-xl',
-        amountBox: 'bg-blue-50 border border-blue-200 text-blue-800 font-bold rounded-xl'
+        amountBox: 'bg-blue-50 border border-blue-200 text-blue-800 font-black rounded-xl'
       },
       {
         id: 3, 
         name: 'Elegan Emas', 
         thumb: 'bg-[#fdfbf7] border-2 border-[#b8860b]',
-        wrapperClass: 'bg-[#fdfbf7] border-2 border-[#b8860b] ring-4 ring-offset-2 ring-[#b8860b]/30 text-[#4a3f35] font-serif-elegant',
-        headerBg: '',
+        wrapperClass: 'bg-[#fdfbf7] border-4 border-[#b8860b] ring-4 ring-offset-4 ring-[#b8860b]/40 text-[#4a3f35] font-serif-elegant shadow-2xl',
         titleColor: 'text-[#8b6508] border-b border-[#b8860b] uppercase tracking-widest',
         accentText: 'text-[#8b6508]',
         tableBorder: 'border-[#deb887]',
-        boxBg: 'bg-transparent border border-[#deb887]',
-        amountBox: 'bg-[#fdf5e6] border border-[#b8860b] text-[#8b6508] font-bold shadow-sm'
+        boxBg: 'bg-transparent border border-[#deb887] shadow-inner',
+        amountBox: 'bg-gradient-to-r from-[#fdf5e6] to-[#fff8dc] border border-[#b8860b] text-[#8b6508] font-bold shadow-md'
       },
       {
         id: 4, 
         name: 'Minimalis Bersih', 
         thumb: 'bg-white border border-slate-200',
-        wrapperClass: 'bg-white border border-slate-200 text-slate-600 font-sans-modern p-4',
-        headerBg: '',
-        titleColor: 'text-slate-900 border-none font-black tracking-tight',
-        accentText: 'text-slate-900 font-medium',
-        tableBorder: 'border-slate-100',
-        boxBg: 'bg-slate-50/50 rounded-lg',
-        amountBox: 'bg-slate-900 text-white font-bold rounded-lg'
+        wrapperClass: 'bg-white border-2 border-slate-200 text-slate-700 font-sans-modern p-4',
+        titleColor: 'text-slate-900 border-none font-black tracking-tight text-3xl',
+        accentText: 'text-slate-900 font-semibold',
+        tableBorder: 'border-slate-200',
+        boxBg: 'bg-slate-50 rounded-lg',
+        amountBox: 'bg-slate-900 text-white font-black rounded-lg'
       }
     ];
 
@@ -531,6 +613,10 @@
     let zoom = 1.0;
     let savedReceipts = JSON.parse(localStorage.getItem('finance_receipts') || '[]');
     let currentStatusFilter = 'Semua';
+    let signatureBase64 = localStorage.getItem('app_signature') || '';
+
+    // Data Bulan
+    const monthList = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     // Initialize Lucide Icons
     lucide.createIcons();
@@ -543,11 +629,9 @@
       const spinner = document.getElementById('loading-spinner');
 
       if (isAuthenticated) {
-        // Langsung masuk
         overlay.classList.add('fade-out');
         setTimeout(() => overlay.style.display = 'none', 700);
       } else {
-        // Tampilkan Login form setelah efek splash screen
         setTimeout(() => {
           spinner.classList.add('opacity-0');
           setTimeout(() => {
@@ -558,7 +642,7 @@
               document.getElementById('login-password').focus();
             }, 50);
           }, 300);
-        }, 1200); // Waktu tampil logo / splash
+        }, 1200); 
       }
     }
 
@@ -570,12 +654,10 @@
         document.getElementById('auth-overlay').classList.add('fade-out');
         setTimeout(() => document.getElementById('auth-overlay').style.display = 'none', 700);
         
-        // Auto Sync on successful fresh login
         fetchDataFromServer(true);
       } else {
         const err = document.getElementById('login-error');
         err.classList.remove('hidden');
-        // Simple shake animation effect
         const box = document.getElementById('login-box');
         box.style.transform = 'translateX(-10px)';
         setTimeout(() => box.style.transform = 'translateX(10px)', 100);
@@ -591,23 +673,49 @@
       }
     }
 
-    // Tangkap tombol Enter pada input password
     document.getElementById('login-password').addEventListener('keypress', function(e) {
       if(e.key === 'Enter') handleLogin();
     });
+
+    // --- Sidebar Mobile Toggle ---
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebar-overlay');
+      
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
+
+    // --- Generator ID Trx ---
+    function generateTrxID() {
+        const d = new Date();
+        const dateStr = d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        return `TRX-${dateStr}-${rand}`;
+    }
 
     // --- Init App ---
     function init() {
       checkAuth();
       renderThemeSelector();
+      renderBulanDropdown();
       
-      // Set default date
+      if(!document.getElementById('f_id_tagihan').value) {
+        document.getElementById('f_id_tagihan').value = generateTrxID();
+      }
       if(!document.getElementById('f_tanggal').value) {
         document.getElementById('f_tanggal').valueAsDate = new Date();
       }
       
-      // Listen to resize for auto-zoom
+      // Load Signature
+      if(signatureBase64) {
+         document.getElementById('preview_ttd_thumb').src = signatureBase64;
+         document.getElementById('ttd_preview_container').classList.remove('hidden');
+         document.getElementById('btn_clear_ttd').classList.remove('hidden');
+      }
+      
       window.addEventListener('resize', autoZoom);
+      document.addEventListener('click', closeBulanDropdownOnClickOutside);
       
       updatePreview();
       renderTable();
@@ -636,6 +744,15 @@
       lucide.createIcons();
       if(tabId === 'generator') autoZoom();
       if(tabId === 'konfirmasi') renderKonfirmasiTable();
+
+      if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (!sidebar.classList.contains('-translate-x-full')) {
+          sidebar.classList.add('-translate-x-full');
+          overlay.classList.add('hidden');
+        }
+      }
     }
 
     // --- UI Helpers ---
@@ -655,9 +772,94 @@
       });
     }
 
+    // --- Dropdown Bulan Multi-Select ---
+    function renderBulanDropdown() {
+      const container = document.getElementById('bulan_checkboxes');
+      container.innerHTML = '';
+      monthList.forEach(m => {
+         const label = document.createElement('label');
+         label.className = "flex items-center gap-2 cursor-pointer p-1.5 hover:bg-slate-50 rounded-md";
+         label.innerHTML = `
+            <input type="checkbox" value="${m}" class="checkbox-month" onchange="updateBulanSelection()">
+            <span class="text-xs text-slate-700">${m}</span>
+         `;
+         container.appendChild(label);
+      });
+    }
+
+    function toggleBulanDropdown(e) {
+      if(e) e.stopPropagation();
+      const dropdown = document.getElementById('bulan_dropdown');
+      dropdown.classList.toggle('hidden');
+    }
+
+    function closeBulanDropdownOnClickOutside(event) {
+      const container = document.getElementById('bulan_container');
+      const dropdown = document.getElementById('bulan_dropdown');
+      if (container && !container.contains(event.target)) {
+          dropdown.classList.add('hidden');
+      }
+    }
+
+    function updateBulanSelection() {
+       const checkboxes = document.querySelectorAll('.checkbox-month:checked');
+       const selected = Array.from(checkboxes).map(cb => cb.value);
+       const joined = selected.join(', ');
+       
+       document.getElementById('f_bulan').value = joined;
+       const displayTxt = document.getElementById('bulan_text');
+       
+       if (selected.length > 0) {
+           displayTxt.innerText = joined;
+           displayTxt.classList.remove('text-slate-400');
+           displayTxt.classList.add('text-slate-800', 'font-semibold');
+       } else {
+           displayTxt.innerText = "Pilih Bulan...";
+           displayTxt.classList.add('text-slate-400');
+           displayTxt.classList.remove('text-slate-800', 'font-semibold');
+       }
+       updatePreview();
+    }
+
+    // Fungsi untuk mengisi checklist saat load data
+    function setBulanCheckboxes(valString) {
+       const vals = valString.split(',').map(v => v.trim());
+       const checkboxes = document.querySelectorAll('.checkbox-month');
+       checkboxes.forEach(cb => {
+           cb.checked = vals.includes(cb.value);
+       });
+       updateBulanSelection();
+    }
+
+    // --- Upload Signature ---
+    function handleSignatureUpload(e) {
+       const file = e.target.files[0];
+       if(file) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+             signatureBase64 = evt.target.result;
+             localStorage.setItem('app_signature', signatureBase64);
+             document.getElementById('preview_ttd_thumb').src = signatureBase64;
+             document.getElementById('ttd_preview_container').classList.remove('hidden');
+             document.getElementById('btn_clear_ttd').classList.remove('hidden');
+             updatePreview();
+          }
+          reader.readAsDataURL(file);
+       }
+    }
+
+    function clearSignature() {
+       signatureBase64 = '';
+       localStorage.removeItem('app_signature');
+       document.getElementById('f_ttd').value = '';
+       document.getElementById('ttd_preview_container').classList.add('hidden');
+       document.getElementById('btn_clear_ttd').classList.add('hidden');
+       updatePreview();
+    }
+
     function setZoom(change) {
       zoom += change;
-      if (zoom < 0.5) zoom = 0.5;
+      if (zoom < 0.3) zoom = 0.3;
       if (zoom > 1.5) zoom = 1.5;
       applyZoom();
     }
@@ -672,7 +874,7 @@
       if(viewport && !viewport.classList.contains('hidden')) {
         const paperWidth = 794; 
         const paperHeight = 559;
-        const padding = 64; 
+        const padding = window.innerWidth < 768 ? 32 : 64; 
         
         const scaleW = (viewport.clientWidth - padding) / paperWidth;
         const scaleH = (viewport.clientHeight - padding) / paperHeight;
@@ -690,10 +892,10 @@
         container.style.width = `${794 * zoom}px`;
         container.style.height = `${559 * zoom}px`; 
       }
-      document.getElementById('zoom-level').innerText = Math.round(zoom * 100) + '%';
+      const zoomText = document.getElementById('zoom-level');
+      if (zoomText) zoomText.innerText = Math.round(zoom * 100) + '%';
     }
 
-    // --- Formatting & Logic ---
     function formatRupiah(angka) {
       return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
     }
@@ -735,13 +937,14 @@
 
     function loadSampleData() {
       document.getElementById('f_jenis_dokumen').value = "KWITANSI PEMBAYARAN";
-      document.getElementById('f_id_tagihan').value = "TRX-1773479610742";
+      document.getElementById('f_id_tagihan').value = generateTrxID();
       document.getElementById('f_tanggal').value = "2025-08-25";
       document.getElementById('f_status').value = "Terkonfirmasi";
       document.getElementById('f_nama_wali').value = "Parwansyah Amrato";
+      document.getElementById('f_wa').value = "6282293337089";
       document.getElementById('f_nama_santri').value = "Auliana Abdurahman Balise";
       document.getElementById('f_kelas').value = "VII";
-      document.getElementById('f_bulan').value = "-";
+      setBulanCheckboxes("Agustus, September");
       document.getElementById('f_tahun').value = "2025";
       document.getElementById('f_jenis_pembayaran').value = "Sarana (PPDB)";
       document.getElementById('f_nominal').value = "4850000";
@@ -760,6 +963,7 @@
         tanggal: document.getElementById('f_tanggal').value,
         status: document.getElementById('f_status').value,
         nama_wali: document.getElementById('f_nama_wali').value,
+        wa: document.getElementById('f_wa').value,
         nama_santri: document.getElementById('f_nama_santri').value,
         kelas: document.getElementById('f_kelas').value,
         bulan: document.getElementById('f_bulan').value,
@@ -778,7 +982,7 @@
       const theme = themes[currentTheme];
       const container = document.getElementById('preview-container');
 
-      let rincian = `<strong class="${theme.accentText}">${data.jenis_pembayaran || '...'}</strong>`;
+      let rincian = `<strong class="${theme.accentText} text-sm md:text-lg">${data.jenis_pembayaran || '...'}</strong>`;
       let metaInfo = [];
       if(data.nama_santri) metaInfo.push(`Santri: ${data.nama_santri}`);
       if(data.kelas) metaInfo.push(`Kelas: ${data.kelas}`);
@@ -790,74 +994,84 @@
       }
       
       if(metaInfo.length > 0) {
-        rincian += `<br><span class="text-xs md:text-sm opacity-80 mt-1 inline-block">${metaInfo.join(' | ')}</span>`;
+        rincian += `<br><span class="text-xs md:text-[15px] opacity-80 mt-1 inline-block">${metaInfo.join(' | ')}</span>`;
       }
       if(data.catatan) {
-        rincian += `<br><span class="text-[10px] md:text-xs italic opacity-70 mt-1 inline-block">* Catatan: ${data.catatan}</span>`;
+        rincian += `<br><span class="text-[10px] md:text-xs italic opacity-70 mt-1 inline-block font-sans-modern">* Catatan: ${data.catatan}</span>`;
       }
 
       const formattedNominal = data.nominal ? formatRupiah(data.nominal) : 'Rp 0';
 
       const html = `
-        <div class="kwitansi-paper flex flex-col p-6 md:p-8 ${theme.wrapperClass} relative">
+        <div class="kwitansi-paper flex flex-col p-5 md:p-8 ${theme.wrapperClass} relative">
           <img src="${LOGO_URL}" class="watermark" crossorigin="anonymous">
 
-          <div class="w-full flex justify-center mb-6 relative z-10">
-            <img src="${KOP_URL}" alt="Kop Surat" class="h-16 md:h-24 object-contain" crossorigin="anonymous">
+          <div class="w-full flex justify-center mb-4 md:mb-6 relative z-10">
+            <img src="${KOP_URL}" alt="Kop Surat" class="h-14 md:h-20 object-contain drop-shadow-sm" crossorigin="anonymous">
           </div>
 
-          <div class="text-center mb-6 relative z-10">
-            <h2 class="text-xl md:text-2xl font-bold uppercase inline-block pb-1 ${theme.titleColor}">
+          <div class="text-center mb-5 md:mb-8 relative z-10 border-t border-b border-dashed ${theme.tableBorder} py-2 md:py-3 mx-10">
+            <h2 class="text-lg md:text-2xl font-bold uppercase inline-block ${theme.titleColor}">
               ${data.jenis_dokumen}
             </h2>
-            ${data.id_tagihan ? `<div class="text-xs md:text-sm mt-1 opacity-70 tracking-widest">NO: ${data.id_tagihan}</div>` : ''}
+            ${data.id_tagihan ? `<div class="text-[10px] md:text-xs mt-1 font-semibold tracking-widest ${theme.accentText}">NO: ${data.id_tagihan}</div>` : ''}
           </div>
 
-          <div class="flex-1 flex flex-col gap-4 relative z-10 text-sm md:text-base">
-            <div class="flex items-start gap-4">
-              <div class="w-40 flex-shrink-0 font-semibold opacity-80">Telah terima dari</div>
-              <div class="flex-shrink-0 opacity-80">:</div>
-              <div class="flex-1 border-b border-dashed ${theme.tableBorder} pb-1 ${theme.accentText} font-bold text-base md:text-lg">
+          <div class="flex-1 flex flex-col gap-3 md:gap-5 relative z-10 text-xs md:text-[15px] px-2 md:px-6">
+            <div class="flex items-end gap-2 md:gap-4">
+              <div class="w-28 md:w-40 flex-shrink-0 font-semibold opacity-90 pb-1">Telah terima dari</div>
+              <div class="flex-shrink-0 opacity-80 pb-1">:</div>
+              <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-1 ${theme.accentText} font-bold text-sm md:text-xl font-serif-elegant uppercase tracking-wide">
                 ${data.nama_wali || '...................................................'}
               </div>
             </div>
 
-            <div class="flex items-start gap-4">
-              <div class="w-40 flex-shrink-0 font-semibold opacity-80 pt-2">Uang sejumlah</div>
+            <div class="flex items-start gap-2 md:gap-4 mt-1">
+              <div class="w-28 md:w-40 flex-shrink-0 font-semibold opacity-90 pt-2">Uang sejumlah</div>
               <div class="flex-shrink-0 opacity-80 pt-2">:</div>
-              <div class="flex-1 ${theme.boxBg} p-2 md:p-3 min-h-[3rem] italic leading-relaxed text-sm md:text-base">
-                ${data.terbilang || '....................................................................................................................'}
+              <div class="flex-1 ${theme.boxBg} p-2 md:p-3 min-h-[2.5rem] md:min-h-[3.5rem] italic leading-relaxed text-sm md:text-lg font-signature font-bold ${theme.accentText}">
+                ${data.terbilang || '...................................................................................................'}
               </div>
             </div>
 
-            <div class="flex items-start gap-4">
-              <div class="w-40 flex-shrink-0 font-semibold opacity-80 pt-1">Untuk pembayaran</div>
-              <div class="flex-shrink-0 opacity-80 pt-1">:</div>
-              <div class="flex-1 border-b border-dashed ${theme.tableBorder} pb-2 leading-relaxed">
+            <div class="flex items-end gap-2 md:gap-4 mt-1">
+              <div class="w-28 md:w-40 flex-shrink-0 font-semibold opacity-90 pb-1">Untuk pembayaran</div>
+              <div class="flex-shrink-0 opacity-80 pb-1">:</div>
+              <div class="flex-1 border-b border-dotted ${theme.tableBorder} pb-1 leading-relaxed">
                 ${rincian}
               </div>
             </div>
           </div>
 
-          <div class="mt-8 flex justify-between items-end relative z-10">
-            <div class="w-1/3 min-w-[200px]">
-              <div class="text-xs font-semibold uppercase opacity-70 mb-1">Total Pembayaran:</div>
-              <div class="text-xl md:text-3xl px-4 py-2 ${theme.amountBox}">
+          <div class="mt-8 md:mt-10 flex justify-between items-end relative z-10 px-2 md:px-6">
+            <div class="w-1/3 min-w-[150px] md:min-w-[220px]">
+              <div class="text-[10px] md:text-xs font-semibold uppercase opacity-70 mb-1">Total Pembayaran:</div>
+              <div class="text-lg md:text-3xl px-3 md:px-5 py-2 md:py-3 ${theme.amountBox}">
                 ${formattedNominal}
               </div>
-              ${data.rekening ? `<div class="text-[10px] mt-2 opacity-70 uppercase truncate max-w-xs border-t ${theme.tableBorder} pt-1">Via: ${data.rekening}</div>` : ''}
+              ${data.rekening ? `<div class="text-[8px] md:text-[10px] mt-2 opacity-70 uppercase truncate max-w-[150px] md:max-w-[220px] font-semibold border-t ${theme.tableBorder} pt-1">Rek: ${data.rekening}</div>` : ''}
             </div>
 
-            <div class="w-1/3 flex flex-col items-center text-center">
-              <div class="mb-1">
-                Tempat, ${data.tanggal ? formatDateIndo(data.tanggal) : '....................'}
+            <div class="w-1/3 flex flex-col items-center text-center text-xs md:text-sm">
+              <div class="mb-1 font-semibold">
+                Ternate, ${data.tanggal ? formatDateIndo(data.tanggal) : '....................'}
               </div>
-              <div class="font-semibold mb-16">
-                ${data.status === 'Terkonfirmasi' ? '<span class="text-emerald-600 font-bold border border-emerald-600 px-2 rounded uppercase text-[10px] mb-1 inline-block tracking-widest">TERKONFIRMASI</span><br>' : ''}
+              <div class="font-semibold mb-2">
+                ${data.status === 'Terkonfirmasi' ? '<span class="text-emerald-600 font-bold border border-emerald-600 px-1.5 md:px-2 rounded uppercase text-[8px] md:text-[10px] mb-1 inline-block tracking-widest">TERKONFIRMASI</span><br>' : ''}
                 Penerima / Bendahara
               </div>
-              <div class="w-4/5 border-b border-current pb-1 font-bold ${theme.accentText} relative">
-                ${data.penerima || '....................................'}
+              
+              <!-- Area Tanda Tangan -->
+              <div class="w-full md:w-4/5 relative flex flex-col items-center justify-end min-h-[60px] md:min-h-[80px] mt-2">
+                <!-- Cap Stempel Paten -->
+                <img src="${STAMP_URL}" class="absolute top-[-30px] md:top-[-45px] left-[-30px] md:left-[-40px] h-24 md:h-36 object-contain opacity-90 z-20 -rotate-6 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">
+                
+                <!-- Upload Tanda Tangan Digital -->
+                ${signatureBase64 ? `<img src="${signatureBase64}" class="absolute bottom-4 max-h-16 md:max-h-24 object-contain opacity-90 z-10 pointer-events-none" style="mix-blend-mode: multiply;" crossorigin="anonymous">` : ''}
+                
+                <div class="border-b border-current w-full pb-1 font-bold ${theme.accentText} uppercase tracking-wider relative z-30">
+                  <span class="bg-white/40 px-2 rounded-sm backdrop-blur-[1px]">${data.penerima || '....................................'}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -908,7 +1122,7 @@
       }
     }
 
-    async function saveDataToSheet() {
+    async function saveDataToSheet(event) {
       const data = getFormData();
       if(!data.nama_wali || !data.nominal) {
         alert("Nama Wali dan Nominal wajib diisi!");
@@ -916,8 +1130,9 @@
       }
 
       data.timestamp = new Date().toISOString();
+      // ID otomatis di-generate bila kosong
       if (!data.id_tagihan) {
-        data.id_tagihan = `TRX-${Date.now()}`;
+        data.id_tagihan = generateTrxID();
         document.getElementById('f_id_tagihan').value = data.id_tagihan;
       }
       data.id = `DOC-${Math.floor(Math.random()*10000)}`;
@@ -998,21 +1213,21 @@
 
         tr.innerHTML = `
           <td>
-            <div class="font-mono text-xs font-semibold text-blue-600">${row.id_tagihan}</div>
-            <div class="text-[10px] text-slate-500">${formatDateIndo(row.tanggal)}</div>
+            <div class="font-mono text-[10px] md:text-xs font-semibold text-blue-600">${row.id_tagihan}</div>
+            <div class="text-[9px] md:text-[10px] text-slate-500">${formatDateIndo(row.tanggal)}</div>
           </td>
           <td>
-            <div class="font-semibold text-slate-800 text-xs">${row.nama_santri}</div>
-            <div class="text-[10px] text-slate-500">${row.jenis_pembayaran}</div>
+            <div class="font-semibold text-slate-800 text-[10px] md:text-xs">${row.nama_santri}</div>
+            <div class="text-[9px] md:text-[10px] text-slate-500">${row.jenis_pembayaran}</div>
           </td>
-          <td class="font-bold text-slate-700 text-xs">${formatRupiah(row.nominal)}</td>
-          <td><input type="text" id="k_bulan_${row.id_tagihan}" value="${row.bulan || ''}" class="w-16 px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Bulan"></td>
-          <td><input type="text" id="k_tahun_${row.id_tagihan}" value="${row.tahun || new Date().getFullYear()}" class="w-16 px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Tahun"></td>
-          <td><input type="text" id="k_penerima_${row.id_tagihan}" value="${row.penerima || ''}" class="w-28 px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Ustadz"></td>
+          <td class="font-bold text-slate-700 text-[10px] md:text-xs">${formatRupiah(row.nominal)}</td>
+          <td><input type="text" id="k_bulan_${row.id_tagihan}" value="${row.bulan || ''}" class="w-24 md:w-32 px-1.5 md:px-2 py-1.5 text-[10px] md:text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Bulan (Koma)"></td>
+          <td><input type="text" id="k_tahun_${row.id_tagihan}" value="${row.tahun || new Date().getFullYear()}" class="w-14 md:w-16 px-1.5 md:px-2 py-1.5 text-[10px] md:text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Tahun"></td>
+          <td><input type="text" id="k_penerima_${row.id_tagihan}" value="${row.penerima || ''}" class="w-20 md:w-28 px-1.5 md:px-2 py-1.5 text-[10px] md:text-xs border border-slate-300 rounded outline-none focus:border-blue-500" placeholder="Ustadz"></td>
           <td class="text-center">${linkBukti}</td>
           <td class="text-right whitespace-nowrap">
-            <button onclick="prosesKonfirmasi('${row.id_tagihan}', this)" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded shadow-sm transition-colors flex items-center gap-1 ml-auto">
-              <i data-lucide="check" class="w-3.5 h-3.5"></i> Konfirmasi
+            <button onclick="prosesKonfirmasi('${row.id_tagihan}', this)" class="text-[10px] md:text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 md:px-3 py-1.5 rounded shadow-sm transition-colors flex items-center gap-1 ml-auto">
+              <i data-lucide="check" class="w-3.5 h-3.5"></i> Konf
             </button>
           </td>
         `;
@@ -1031,7 +1246,7 @@
 
       if(confirm(`Yakin ingin mengkonfirmasi pembayaran TRX: ${id_tagihan}?\nNotifikasi WhatsApp akan otomatis dikirim ke Wali Santri.`)) {
         const originalHtml = btnElement.innerHTML;
-        btnElement.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Memproses...`;
+        btnElement.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Proses...`;
         btnElement.disabled = true;
 
         try {
@@ -1134,18 +1349,17 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50 transition-colors";
         tr.innerHTML = `
-          <td class="text-xs whitespace-nowrap">${formatDateIndo(row.tanggal)}</td>
-          <td class="font-mono text-xs font-semibold text-blue-600">${row.id_tagihan}</td>
+          <td class="text-[10px] md:text-xs whitespace-nowrap">${formatDateIndo(row.tanggal)}</td>
+          <td class="font-mono text-[10px] md:text-xs font-semibold text-blue-600">${row.id_tagihan}</td>
           <td>
-            <div class="font-semibold text-slate-800">${row.nama_wali}</div>
-            <div class="text-[10px] text-slate-500">${row.nama_santri} ${row.kelas ? '('+row.kelas+')' : ''}</div>
+            <div class="font-semibold text-slate-800 text-[10px] md:text-xs">${row.nama_wali}</div>
+            <div class="text-[9px] md:text-[10px] text-slate-500">${row.nama_santri} ${row.kelas ? '('+row.kelas+')' : ''}</div>
           </td>
-          <td class="text-xs max-w-[150px] truncate" title="${row.jenis_pembayaran}">${row.jenis_pembayaran}</td>
-          <td class="font-bold text-slate-700">${formatRupiah(row.nominal)}</td>
-          <td><span class="px-2 py-1 text-[10px] font-bold rounded uppercase ${statusColor}">${statusText}</span></td>
+          <td class="text-[10px] md:text-xs max-w-[120px] md:max-w-[150px] truncate" title="${row.jenis_pembayaran}">${row.jenis_pembayaran}</td>
+          <td class="font-bold text-slate-700 text-[10px] md:text-xs">${formatRupiah(row.nominal)}</td>
+          <td><span class="px-1.5 md:px-2 py-0.5 md:py-1 text-[8px] md:text-[10px] font-bold rounded uppercase ${statusColor}">${statusText}</span></td>
           <td class="text-right whitespace-nowrap">
-            <button onclick="loadReceiptData('${row.id_tagihan}')" class="text-xs bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 px-3 py-1.5 rounded shadow-sm transition-colors">Buka</button>
-            <button onclick="deleteReceipt('${row.id_tagihan}')" class="text-xs ml-1 text-red-500 hover:bg-red-50 px-2 py-1.5 rounded transition-colors"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+            <button onclick="loadReceiptData('${row.id_tagihan}')" class="text-[10px] md:text-xs bg-white border border-slate-300 hover:border-blue-500 hover:text-blue-600 px-2 md:px-3 py-1 md:py-1.5 rounded shadow-sm transition-colors">Buka</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1168,9 +1382,12 @@
 
         document.getElementById('f_status').value = data.status || '';
         document.getElementById('f_nama_wali').value = data.nama_wali || '';
+        document.getElementById('f_wa').value = data.wa || '';
         document.getElementById('f_nama_santri').value = data.nama_santri || '';
         document.getElementById('f_kelas').value = data.kelas || '';
-        document.getElementById('f_bulan').value = data.bulan || '';
+        
+        setBulanCheckboxes(data.bulan || '');
+        
         document.getElementById('f_tahun').value = data.tahun || '';
         document.getElementById('f_jenis_pembayaran').value = data.jenis_pembayaran || '';
         document.getElementById('f_nominal').value = data.nominal || '';
@@ -1184,28 +1401,13 @@
       }
     }
 
-    function deleteReceipt(id_tagihan) {
-      if(confirm('Hapus data kwitansi ini dari browser (Lokal)?')) {
-        savedReceipts = savedReceipts.filter(r => r.id_tagihan !== id_tagihan);
-        localStorage.setItem('finance_receipts', JSON.stringify(savedReceipts));
-        renderTable();
-      }
-    }
-
-    function clearAllData() {
-      if(confirm('PERINGATAN: Hapus SEMUA data tersimpan di LOKAL browser? (Tidak menghapus data di Google Sheet)')) {
-        savedReceipts = [];
-        localStorage.removeItem('finance_receipts');
-        renderTable();
-      }
-    }
-
     function resetForm() {
       if(confirm('Kosongkan semua form input?')) {
         document.getElementById('kwitansi-form').reset();
-        document.getElementById('f_id_tagihan').value = `TRX-${Date.now()}`;
+        document.getElementById('f_id_tagihan').value = generateTrxID();
         document.getElementById('f_tanggal').valueAsDate = new Date();
         document.getElementById('f_terbilang').value = "";
+        setBulanCheckboxes("");
         updatePreview();
       }
     }
