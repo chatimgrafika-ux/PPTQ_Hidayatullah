@@ -126,13 +126,24 @@
         </button>
 
         <!-- Card: Tahfizh -->
-        <button onclick="openForm('tahfizh')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-amber-300 transition-all text-left flex items-start gap-4 md:col-span-2">
+        <button onclick="openForm('tahfizh')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-amber-300 transition-all text-left flex items-start gap-4">
           <div class="bg-amber-100 p-3 rounded-xl text-amber-600 group-hover:scale-110 transition-transform">
             <i class="ph-fill ph-book-open text-3xl"></i>
           </div>
           <div>
             <h3 class="text-lg font-bold text-slate-800">Absensi Tahfizh</h3>
             <p class="text-sm text-slate-500 mt-1">Presensi difilter per kelompok halaqoh.</p>
+          </div>
+        </button>
+
+        <!-- Card: Apel Halaqoh -->
+        <button onclick="openForm('apel_halaqoh')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-indigo-300 transition-all text-left flex items-start gap-4">
+          <div class="bg-indigo-100 p-3 rounded-xl text-indigo-600 group-hover:scale-110 transition-transform">
+            <i class="ph-fill ph-users-three text-3xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-slate-800">Absen Apel Halaqoh</h3>
+            <p class="text-sm text-slate-500 mt-1">Presensi apel gabungan seluruh halaqoh.</p>
           </div>
         </button>
 
@@ -309,6 +320,12 @@ const categoryConfig = {
     icon: "ph-book-open",
     label: "Pilih Waktu Halaqoh",
     options: ["Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)"]
+  },
+  apel_halaqoh: {
+    title: "Absen Apel Halaqoh",
+    icon: "ph-users-three",
+    label: "Pilih Waktu Apel",
+    options: ["Apel Pagi", "Apel Sore", "Apel Malam", "Lainnya"]
   }
 };
 
@@ -390,31 +407,51 @@ function openForm(category) {
   document.getElementById('viewDashboard').classList.add('hidden');
   document.getElementById('viewForm').classList.remove('hidden');
 
-  // LOGIKA KHUSUS ABSEN SHOLAT (GABUNGAN SEMUA KELAS)
-  if (category === 'sholat') {
+  // LOGIKA KHUSUS ABSEN SHOLAT (GABUNGAN SEMUA KELAS) ATAU APEL HALAQOH (GABUNGAN SEMUA HALAQOH)
+  if (category === 'sholat' || category === 'apel_halaqoh') {
     wrapperGrup.classList.add('hidden');
     selectGrup.required = false;
 
-    // Ambil semua kelas yang valid (Abaikan Kelas I, II, dan Putri)
-    const availableKelas = Object.keys(studentData.kelas || {});
-    const forbiddenKelas = ['I', 'II', '1', '2'];
-    const filteredKelas = availableKelas.filter(k => {
-      const kUpper = k.trim().toUpperCase();
-      if (forbiddenKelas.includes(kUpper)) return false; 
-      if (kUpper.includes('PUTRI')) return false; 
-      return true;
-    });
+    let sourceData = null;
+    let isHalaqohFormat = false;
 
-    // Urutkan kelas sesuai jenjang
-    const orderedKelas = ['VII','VIII','IX','X','XI','XII'].filter(k => filteredKelas.includes(k));
-    filteredKelas.forEach(k => { if(!orderedKelas.includes(k)) orderedKelas.push(k); });
-    
-    activeGroups = orderedKelas;
+    if (category === 'sholat') {
+      // Ambil semua kelas yang valid (Abaikan Kelas I, II, dan Putri)
+      const availableKelas = Object.keys(studentData.kelas || {});
+      const forbiddenKelas = ['I', 'II', '1', '2'];
+      const filteredKelas = availableKelas.filter(k => {
+        const kUpper = k.trim().toUpperCase();
+        if (forbiddenKelas.includes(kUpper)) return false; 
+        if (kUpper.includes('PUTRI')) return false; 
+        return true;
+      });
+
+      // Urutkan kelas sesuai jenjang
+      const orderedKelas = ['VII','VIII','IX','X','XI','XII'].filter(k => filteredKelas.includes(k));
+      filteredKelas.forEach(k => { if(!orderedKelas.includes(k)) orderedKelas.push(k); });
+      
+      activeGroups = orderedKelas;
+      sourceData = studentData.kelas;
+      isHalaqohFormat = false;
+    } else {
+      // Apel Halaqoh: Ambil semua halaqoh & urutkan
+      const groups = Object.keys(studentData.halaqoh || {});
+      groups.sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
+        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
+        return numA - numB;
+      });
+
+      activeGroups = groups;
+      sourceData = studentData.halaqoh;
+      isHalaqohFormat = true;
+    }
+
     container.innerHTML = '';
     
-    // Render semua kelas ke layar
+    // Render semua kelas/halaqoh ke layar
     activeGroups.forEach(k => {
-      container.appendChild(buatBlokKelas(k, studentData.kelas[k], false));
+      container.appendChild(buatBlokKelas(k, sourceData[k], isHalaqohFormat));
     });
 
     // Buka accordion pertama otomatis
@@ -427,7 +464,7 @@ function openForm(category) {
     document.getElementById('submitContainer').classList.remove('translate-y-full');
 
   } else {
-    // LOGIKA SELAIN SHOLAT (TERPISAH PER KELAS / HALAQOH)
+    // LOGIKA SELAIN SHOLAT & APEL HALAQOH (TERPISAH PER KELAS / HALAQOH)
     wrapperGrup.classList.remove('hidden');
     selectGrup.required = true;
     selectGrup.innerHTML = `<option value="" disabled selected>Pilih...</option>`;
@@ -478,7 +515,7 @@ function openForm(category) {
   }
 }
 
-// Listener saat Kelas / Halaqoh dipilih (Khusus untuk NON-SHOLAT)
+// Listener saat Kelas / Halaqoh dipilih (Khusus untuk NON-SHOLAT & NON-APEL)
 document.getElementById('pilihGrup').addEventListener('change', (e) => {
   const selectedGroup = e.target.value;
   const container = document.getElementById('kelasContainer');
@@ -643,9 +680,9 @@ fetch(WEB_APP_URL)
       let groupsToSubmit = [];
 
       // Tentukan grup mana saja yang akan dikirim ke backend
-      if (currentCategory === 'sholat') {
-        payload.grupSpesifik = 'Semua Kelas';
-        groupsToSubmit = activeGroups; // activeGroups berisi array [VII, VIII, IX, X, XI, XII]
+      if (currentCategory === 'sholat' || currentCategory === 'apel_halaqoh') {
+        payload.grupSpesifik = currentCategory === 'sholat' ? 'Semua Kelas' : 'Semua Halaqoh';
+        groupsToSubmit = activeGroups; // activeGroups berisi semua array kelas atau halaqoh
       } else {
         const selectedGroup = document.getElementById('pilihGrup').value;
         payload.grupSpesifik = selectedGroup;
