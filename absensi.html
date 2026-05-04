@@ -142,7 +142,7 @@
             <i class="ph-fill ph-users-three text-3xl"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-slate-800">Absen Apel Halaqoh</h3>
+            <h3 class="text-lg font-bold text-slate-800">Absensi Halaqoh Tahfizh</h3>
             <p class="text-sm text-slate-500 mt-1">Presensi apel gabungan seluruh halaqoh.</p>
           </div>
         </button>
@@ -246,6 +246,23 @@
           </div>
         </div>
 
+        <!-- MANAJER GRUP DINAMIS (Hanya Tampil di Form Gabungan seperti Sholat/Apel Halaqoh) -->
+        <div id="dynamicGroupManager" class="hidden bg-indigo-50 border border-indigo-100 p-4 rounded-xl space-y-3">
+          <div class="flex items-center gap-2 text-indigo-800 font-semibold text-sm">
+            <i class="ph-fill ph-circles-three-plus text-lg"></i>
+            Kelola Daftar Halaqoh / Kelas
+          </div>
+          <div class="flex gap-2">
+            <select id="selectAddGroup" class="flex-1 px-4 py-2.5 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-medium text-slate-700">
+              <!-- Opsi tambahan diinject via JS -->
+            </select>
+            <button type="button" id="btnAddGroup" class="bg-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed">
+              Tambah
+            </button>
+          </div>
+          <p class="text-xs text-indigo-500">Halaqoh yang tidak mengikuti apel bisa Anda hapus dari daftar di bawah dengan menekan ikon tong sampah.</p>
+        </div>
+
         <!-- Dynamic Classes Container -->
         <div id="kelasContainer" class="space-y-4">
           <!-- Inject kelas/halaqoh here -->
@@ -288,6 +305,9 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz98mOfOxzJi49U8WAr
 let studentData = null;
 let currentCategory = null;
 let activeGroups = [];
+let allAvailableGroups = []; // Menyimpan master data grup 
+let currentSourceData = null;
+let currentIsHalaqohFormat = false;
 
 // Konfigurasi Kategori Absensi
 const categoryConfig = {
@@ -322,10 +342,10 @@ const categoryConfig = {
     options: ["Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)"]
   },
   apel_halaqoh: {
-    title: "Absen Apel Halaqoh",
+    title: "Absensi Halaqoh Tahfizh",
     icon: "ph-users-three",
     label: "Pilih Waktu Apel",
-    options: ["Apel Pagi", "Apel Sore", "Apel Malam", "Lainnya"]
+    options: ["Apel Pagi","Apel Siang", "Apel Sore", "Apel Malam", "Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)","Lainnya"]
   }
 };
 
@@ -378,8 +398,72 @@ function resetForm() {
   
   // Kembalikan form ke status default (harus isi kelas)
   document.getElementById('wrapperPilihGrup').classList.remove('hidden');
+  document.getElementById('dynamicGroupManager').classList.add('hidden');
   document.getElementById('pilihGrup').required = true;
 }
+
+// Fitur Baru: Merender UI Gabungan & Dropdown "Tambah"
+function renderCombinedGroups() {
+  const container = document.getElementById('kelasContainer');
+  container.innerHTML = '';
+  
+  // 1. Render setiap blok yang statusnya masih 'active'
+  activeGroups.forEach(k => {
+    container.appendChild(buatBlokKelas(k, currentSourceData[k], currentIsHalaqohFormat, true));
+  });
+
+  // 2. Perbarui isi dropdown "Tambah Grup" berdasarkan sisa grup
+  const selectAdd = document.getElementById('selectAddGroup');
+  const btnAdd = document.getElementById('btnAddGroup');
+  
+  selectAdd.innerHTML = '<option value="" disabled selected>Pilih yang ingin ditambahkan...</option>';
+  
+  const unselectedGroups = allAvailableGroups.filter(g => !activeGroups.includes(g));
+  unselectedGroups.forEach(g => {
+    selectAdd.innerHTML += `<option value="${g}">${g}</option>`;
+  });
+
+  // Nonaktifkan tombol tambah jika sudah tidak ada grup tersisa
+  btnAdd.disabled = unselectedGroups.length === 0;
+}
+
+// Fitur Baru: Menghapus grup dari daftar gabungan
+function removeGroup(groupName) {
+  // Filter keluar grup yang dihapus
+  activeGroups = activeGroups.filter(g => g !== groupName);
+  renderCombinedGroups(); // render ulang
+}
+
+// Fitur Baru: Event listener untuk Menambahkan grup ke daftar
+document.getElementById('btnAddGroup').addEventListener('click', () => {
+  const select = document.getElementById('selectAddGroup');
+  const val = select.value;
+  
+  if (val) {
+    activeGroups.push(val);
+    
+    // Urutkan kembali activeGroups agar rapi
+    if (currentIsHalaqohFormat) {
+      activeGroups.sort((a, b) => {
+        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
+        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
+        return numA - numB;
+      });
+    } else {
+      const order = ['VII','VIII','IX','X','XI','XII'];
+      activeGroups.sort((a, b) => {
+        let idxA = order.indexOf(a);
+        let idxB = order.indexOf(b);
+        if(idxA === -1) idxA = 99;
+        if(idxB === -1) idxB = 99;
+        return idxA - idxB;
+      });
+    }
+    
+    renderCombinedGroups();
+  }
+});
+
 
 // Function to open specific form
 function openForm(category) {
@@ -407,13 +491,13 @@ function openForm(category) {
   document.getElementById('viewDashboard').classList.add('hidden');
   document.getElementById('viewForm').classList.remove('hidden');
 
-  // LOGIKA KHUSUS ABSEN SHOLAT (GABUNGAN SEMUA KELAS) ATAU APEL HALAQOH (GABUNGAN SEMUA HALAQOH)
+  // LOGIKA KHUSUS ABSEN SHOLAT & APEL HALAQOH (GABUNGAN)
   if (category === 'sholat' || category === 'apel_halaqoh') {
     wrapperGrup.classList.add('hidden');
     selectGrup.required = false;
-
-    let sourceData = null;
-    let isHalaqohFormat = false;
+    
+    // Tampilkan panel Manajer Grup
+    document.getElementById('dynamicGroupManager').classList.remove('hidden');
 
     if (category === 'sholat') {
       // Ambil semua kelas yang valid (Abaikan Kelas I, II, dan Putri)
@@ -430,9 +514,10 @@ function openForm(category) {
       const orderedKelas = ['VII','VIII','IX','X','XI','XII'].filter(k => filteredKelas.includes(k));
       filteredKelas.forEach(k => { if(!orderedKelas.includes(k)) orderedKelas.push(k); });
       
-      activeGroups = orderedKelas;
-      sourceData = studentData.kelas;
-      isHalaqohFormat = false;
+      allAvailableGroups = orderedKelas;
+      activeGroups = [...allAvailableGroups];
+      currentSourceData = studentData.kelas;
+      currentIsHalaqohFormat = false;
     } else {
       // Apel Halaqoh: Ambil semua halaqoh & urutkan
       const groups = Object.keys(studentData.halaqoh || {});
@@ -442,30 +527,31 @@ function openForm(category) {
         return numA - numB;
       });
 
-      activeGroups = groups;
-      sourceData = studentData.halaqoh;
-      isHalaqohFormat = true;
+      allAvailableGroups = groups;
+      activeGroups = [...allAvailableGroups];
+      currentSourceData = studentData.halaqoh;
+      currentIsHalaqohFormat = true;
     }
 
-    container.innerHTML = '';
-    
-    // Render semua kelas/halaqoh ke layar
-    activeGroups.forEach(k => {
-      container.appendChild(buatBlokKelas(k, sourceData[k], isHalaqohFormat));
-    });
+    // Render Form Menggunakan Fungsi Baru
+    renderCombinedGroups();
 
     // Buka accordion pertama otomatis
     if(activeGroups.length > 0) {
       const safeFirstId = activeGroups[0].replace(/\s+/g, '_');
-      setTimeout(() => toggleAccordion(safeFirstId), 200);
+      setTimeout(() => {
+        const content = document.getElementById(`content-${safeFirstId}`);
+        if(content && content.classList.contains('hidden')) toggleAccordion(safeFirstId);
+      }, 200);
     }
 
-    // Tampilkan tombol submit langsung (karena form sudah dimuat)
+    // Tampilkan tombol submit langsung
     document.getElementById('submitContainer').classList.remove('translate-y-full');
 
   } else {
     // LOGIKA SELAIN SHOLAT & APEL HALAQOH (TERPISAH PER KELAS / HALAQOH)
     wrapperGrup.classList.remove('hidden');
+    document.getElementById('dynamicGroupManager').classList.add('hidden'); // Pastikan manager tersembunyi
     selectGrup.required = true;
     selectGrup.innerHTML = `<option value="" disabled selected>Pilih...</option>`;
     
@@ -524,8 +610,8 @@ document.getElementById('pilihGrup').addEventListener('change', (e) => {
   const isTahfizh = currentCategory === 'tahfizh';
   const dataSantri = isTahfizh ? studentData.halaqoh[selectedGroup] : studentData.kelas[selectedGroup];
 
-  // Render HANYA kelas/halaqoh yang dipilih
-  container.appendChild(buatBlokKelas(selectedGroup, dataSantri, isTahfizh));
+  // Render HANYA kelas/halaqoh yang dipilih, isCombined = false
+  container.appendChild(buatBlokKelas(selectedGroup, dataSantri, isTahfizh, false));
   
   // Buka accordion secara otomatis
   const safeId = selectedGroup.replace(/\s+/g, '_');
@@ -560,8 +646,8 @@ document.getElementById('btnBack').addEventListener('click', (e) => {
   backToDashboard();
 });
 
-// Function to build student rows
-function buatBlokKelas(groupName, namaSantri, isTahfizh) {
+// Function to build student rows (Ditambahkan parameter `isCombined` untuk opsi Hapus)
+function buatBlokKelas(groupName, namaSantri, isTahfizh, isCombined = false) {
   const div = document.createElement('div');
   div.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200';
   
@@ -581,6 +667,15 @@ function buatBlokKelas(groupName, namaSantri, isTahfizh) {
       <div class="flex items-center gap-3">
         <span class="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-md" id="badge-${safeGroupName}">${namaSantri.length} Santri</span>
         <i class="ph ph-caret-down text-slate-500 transition-transform duration-300" id="icon-${safeGroupName}"></i>
+        
+        <!-- Tombol Hapus (Hanya muncul jika ini form gabungan) -->
+        ${isCombined ? `
+          <button type="button" onclick="event.stopPropagation(); removeGroup('${groupName}')" 
+            class="text-rose-500 hover:bg-rose-100 hover:text-rose-600 p-1.5 rounded-lg transition-colors ml-1 z-10 flex items-center" 
+            title="Hapus grup ini dari daftar absensi">
+            <i class="ph-fill ph-trash text-lg"></i>
+          </button>
+        ` : ''}
       </div>
     </div>
   `;
@@ -682,7 +777,8 @@ fetch(WEB_APP_URL)
       // Tentukan grup mana saja yang akan dikirim ke backend
       if (currentCategory === 'sholat' || currentCategory === 'apel_halaqoh') {
         payload.grupSpesifik = currentCategory === 'sholat' ? 'Semua Kelas' : 'Semua Halaqoh';
-        groupsToSubmit = activeGroups; // activeGroups berisi semua array kelas atau halaqoh
+        // groupsToSubmit sekarang menyesuaikan dengan yang ter-render di layar (yang tidak dihapus user)
+        groupsToSubmit = activeGroups; 
       } else {
         const selectedGroup = document.getElementById('pilihGrup').value;
         payload.grupSpesifik = selectedGroup;
