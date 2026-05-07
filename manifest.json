@@ -1,7 +1,7 @@
 {
 "name": "Dashboard Presensi PPTQ Hidayatullah Ternate",
 "short_name": "Presensi PPTQ",
-"start_url": "./index.html",
+"start_url": "./absensi.html",
 "display": "standalone",
 "background_color": "#f8fafc",
 "theme_color": "#1d4ed8",
@@ -9,13 +9,13 @@
 "orientation": "portrait",
 "icons": [
 {
-"src": "./assets/icons/PPTQ.png",
+"src": "https://drive.google.com/thumbnail?id=1K_HHFffMKiuvP6Zj5PASOzBbTzUuoEq0",
 "sizes": "192x192",
 "type": "image/png",
 "purpose": "any maskable"
 },
 {
-"src": "./assets/icons/PPTQ.png",
+"src": "https://drive.google.com/thumbnail?id=1K_HHFffMKiuvP6Zj5PASOzBbTzUuoEq0",
 "sizes": "512x512",
 "type": "image/png"
 }
