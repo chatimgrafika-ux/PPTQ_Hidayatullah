@@ -1,10 +1,20 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+  
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard Presensi PPTQ Hidayatullah Ternate</title>
- 
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1d4ed8">
+  <!-- iOS Support -->
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192.png?text=Icon+192">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Presensi PPTQ">
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
@@ -842,5 +852,91 @@ fetch(WEB_APP_URL)
       </div>`;
   });
 </script>
+<!-- PWA Install Banner UI -->
+  <div id="pwaInstallBanner" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] border-t border-slate-200 p-4 z-[60] transform translate-y-full transition-transform duration-500 ease-out flex flex-col sm:flex-row items-center justify-between gap-4 rounded-t-2xl">
+    <div class="flex items-center gap-3 w-full sm:w-auto">
+      <div class="bg-blue-100 p-2.5 rounded-xl text-blue-600 shrink-0">
+        <i class="ph-fill ph-download-simple text-2xl"></i>
+      </div>
+      <div>
+        <h4 class="font-bold text-slate-800 text-sm">Install Aplikasi Presensi</h4>
+        <p class="text-xs text-slate-500 mt-0.5" id="pwaInstallDesc">Pasang di layar utama untuk akses instan.</p>
+      </div>
+    </div>
+    <div class="flex gap-2 w-full sm:w-auto">
+      <button id="btnDismissPwa" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors active:scale-95">Nanti</button>
+      <button id="btnInstallPwa" class="flex-1 sm:flex-none px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md active:scale-95">Install</button>
+    </div>
+  </div>
+
+  <!-- PWA Script Logic -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let deferredPrompt;
+      const installBanner = document.getElementById('pwaInstallBanner');
+      const btnInstall = document.getElementById('btnInstallPwa');
+      const btnDismiss = document.getElementById('btnDismissPwa');
+      const descPwa = document.getElementById('pwaInstallDesc');
+
+      // 1. Registrasi Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js')
+            .then(reg => console.log('SW Registered!', reg.scope))
+            .catch(err => console.log('SW Failed:', err));
+        });
+      }
+
+      // 2. Deteksi iOS & Standalone Mode
+      const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+      const isPwaDismissed = localStorage.getItem('pwa_dismissed');
+
+      // 3. Fungsi Menampilkan/Menyembunyikan Banner
+      const showBanner = () => {
+        if (isPwaDismissed) return;
+        setTimeout(() => installBanner.classList.remove('translate-y-full'), 1500); // Muncul setelah 1.5 detik
+      };
+
+      const hideBanner = () => {
+        installBanner.classList.add('translate-y-full');
+        localStorage.setItem('pwa_dismissed', 'true');
+      };
+
+      // 4. Handle Event Install Android/Chrome
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if(!isIos()) showBanner();
+      });
+
+      // 5. Aksi Tombol Dismiss
+      btnDismiss.addEventListener('click', hideBanner);
+
+      // 6. Aksi Tombol Install
+      btnInstall.addEventListener('click', async () => {
+        if (isIos()) {
+          alert("📱 Cara Install di iOS / iPhone:\n\n1. Tap ikon 'Share' (Bagikan) di bagian bawah browser Anda.\n2. Geser menu ke atas dan pilih 'Add to Home Screen' (Tambah ke Layar Utama).");
+          hideBanner();
+          return;
+        }
+
+        if (deferredPrompt) {
+          hideBanner();
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`User ${outcome} install prompt`);
+          deferredPrompt = null;
+        }
+      });
+
+      // 7. Trigger manual untuk iOS (Karena iOS tidak punya event beforeinstallprompt)
+      if (isIos() && !isInStandaloneMode()) {
+        descPwa.innerText = "Tap ikon Share lalu 'Add to Home Screen'";
+        btnInstall.innerText = "Cara Install";
+        showBanner();
+      }
+    });
+  </script>
 </body>
 </html>
