@@ -20,6 +20,9 @@
   
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body {
@@ -198,6 +201,21 @@
 
       <!-- VIEW: DASHBOARD MENU -->
       <div id="viewDashboard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 fade-in">
+        
+        <!-- Menu Baru: Statistik Kehadiran -->
+        <button onclick="openChart()" class="group bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-[1.5rem] shadow-lg border border-slate-700 hover:shadow-2xl hover:-translate-y-1 transition-all text-left flex items-center gap-5 col-span-1 md:col-span-2">
+          <div class="bg-white/10 p-4 rounded-2xl text-white group-hover:scale-110 group-hover:rotate-3 transition-transform backdrop-blur-md border border-white/10">
+            <i class="ph-fill ph-chart-line-up text-4xl"></i>
+          </div>
+          <div class="pt-1 w-full">
+            <div class="flex justify-between items-center w-full">
+              <h3 class="text-xl font-bold text-white tracking-wide">Statistik Kehadiran</h3>
+              <i class="ph-bold ph-arrow-right text-slate-400 group-hover:text-white transition-colors"></i>
+            </div>
+            <p class="text-sm text-slate-300 mt-1 font-medium leading-snug">Lihat tren kehadiran santri pekan ini.</p>
+          </div>
+        </button>
+
         <!-- Cards using map in JS logic to reduce HTML bloat, but hardcoded here as requested -->
         <button onclick="openForm('sholat')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
           <div class="bg-emerald-50 p-3.5 rounded-2xl text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform">
@@ -322,6 +340,91 @@
           </div>
         </div>
       </form>
+
+      <!-- VIEW: CHART/STATISTIK -->
+      <div id="viewChart" class="hidden fade-in space-y-6 pb-10">
+        
+        <!-- Panel Filter Canggih -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6 mb-6">
+          <h2 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="ph-fill ph-faders text-indigo-500 text-lg"></i> Filter Analisis Data
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Kategori Absensi</label>
+              <select id="filterKategori" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 appearance-none">
+                <option value="Semua">Semua Kategori</option>
+                <option value="Absensi Sholat">Absensi Sholat</option>
+                <option value="Sekolah SMP">Sekolah SMP</option>
+                <option value="Sekolah SMA">Sekolah SMA</option>
+                <option value="Kajian Diniah">Kajian Diniah</option>
+                <option value="Halaqoh Tahfizh">Halaqoh Tahfizh</option>
+                <option value="Apel Halaqoh">Apel Halaqoh</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Kelas / Halaqoh</label>
+              <select id="filterKelas" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 appearance-none disabled:opacity-50">
+                <option value="Semua">Semua Kelas</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Mulai Tanggal</label>
+              <input type="date" id="filterStartDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700">
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Sampai Tanggal</label>
+              <input type="date" id="filterEndDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700">
+            </div>
+          </div>
+          <div class="mt-5 flex justify-end">
+            <button id="btnApplyFilter" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center gap-2 text-sm">
+              <i class="ph-bold ph-funnel"></i> Terapkan Filter
+            </button>
+          </div>
+        </div>
+
+        <!-- Rangkuman Kotak -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="chartSummary">
+          <!-- Akan di-inject oleh JS -->
+        </div>
+
+        <!-- Kanvas Kurva Garis (Dinamis per Sesi) -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-slate-100 pb-4">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="ph-fill ph-trend-up text-lg"></i></div>
+              Tren Kehadiran per Sesi / Waktu
+            </h2>
+            <span class="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1.5 rounded-lg border border-slate-200" id="sessionChartLabel">Semua Sesi</span>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="sessionLineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Kanvas Grafik Batang (Tren Harian) -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6">
+          <h2 class="text-base font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="ph-fill ph-chart-bar text-lg"></i></div> 
+            Tren Presensi Berdasarkan Tanggal
+          </h2>
+          <div class="relative w-full h-72">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Daftar Santri Bermasalah -->
+        <div class="pt-2">
+          <h2 class="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 px-1">
+            <i class="ph-fill ph-users-three text-rose-500 text-2xl"></i> 
+            Daftar Absensi (Sakit, Pulang, Alpa)
+          </h2>
+          <div id="namesListContainer" class="space-y-5">
+            <!-- Di-inject via JS -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -690,10 +793,283 @@ function backToDashboard() {
   document.getElementById('submitContainer').classList.add('translate-y-full');
 
   document.getElementById('viewForm').classList.add('hidden');
+  document.getElementById('viewChart').classList.add('hidden');
   document.getElementById('viewDashboard').classList.remove('hidden');
 }
 
 document.getElementById('btnBack').addEventListener('click', (e) => { e.preventDefault(); backToDashboard(); });
+
+// ==== LOGIKA CHART / STATISTIK ====
+let myBarChartInstance = null;
+let myLineChartInstance = null;
+
+// Mengatur Date Input ke Default (7 Hari Terakhir & Hari ini)
+function setDefaultFilterDates() {
+  const now = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(now.getDate() - 7);
+  
+  document.getElementById('filterEndDate').value = now.toISOString().split('T')[0];
+  document.getElementById('filterStartDate').value = sevenDaysAgo.toISOString().split('T')[0];
+}
+
+// Logic Populating "Kelas" filter based on "Kategori"
+document.getElementById('filterKategori').addEventListener('change', (e) => {
+  const kategori = e.target.value;
+  const selectKelas = document.getElementById('filterKelas');
+  selectKelas.innerHTML = '<option value="Semua">Semua Kelas / Halaqoh</option>';
+  
+  if (!studentData) return;
+  
+  let availableGroups = [];
+  if (kategori.includes('Tahfizh') || kategori.includes('Apel')) {
+    availableGroups = Object.keys(studentData.halaqoh || {}).sort((a,b) => parseInt(a.match(/\d+/)?.[0]||0) - parseInt(b.match(/\d+/)?.[0]||0));
+  } else if (kategori !== 'Semua') {
+    availableGroups = Object.keys(studentData.kelas || {}).filter(k => !['I','II','1','2'].includes(k.toUpperCase()) && !k.toUpperCase().includes('PUTRI'));
+    
+    // Sort khusus kelas
+    const order = ['VII','VIII','IX','X','XI','XII'];
+    availableGroups.sort((a, b) => (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b)));
+  }
+
+  availableGroups.forEach(g => {
+    selectKelas.innerHTML += `<option value="${g}">${g}</option>`;
+  });
+});
+
+async function fetchAndRenderChart(filters = {}) {
+  showModal('loading', 'Menarik Data Analisis', 'Menganalisis jutaan titik data...', false);
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'get_history', filters: filters })
+    });
+    const result = await res.json();
+    closeModal();
+
+    if(result.status === 'success') {
+      renderChart(result.data);
+    } else {
+      showModal('error', 'Data Kosong', 'Belum ada data untuk filter ini.');
+    }
+  } catch(err) {
+    closeModal();
+    showModal('error', 'Error Jaringan', 'Gagal memuat statistik.');
+  }
+}
+
+document.getElementById('btnApplyFilter').addEventListener('click', () => {
+  const filters = {
+    kategori: document.getElementById('filterKategori').value,
+    kelas: document.getElementById('filterKelas').value,
+    startDate: document.getElementById('filterStartDate').value,
+    endDate: document.getElementById('filterEndDate').value
+  };
+  fetchAndRenderChart(filters);
+});
+
+async function openChart() {
+  document.getElementById('headerTitle').innerText = "Analisis & Statistik";
+  document.getElementById('headerSubtitle').innerText = "Pantau tren kehadiran secara menyeluruh.";
+  document.getElementById('headerIcon').className = `ph-fill ph-chart-polar text-3xl text-white`;
+  document.getElementById('headerIconContainer').className = `inline-flex items-center justify-center p-3.5 bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg shadow-indigo-600/30 rounded-2xl mb-5`;
+  
+  document.getElementById('btnBack').classList.remove('hidden');
+  document.getElementById('userProfileBadge').classList.add('hidden');
+  
+  document.getElementById('viewDashboard').classList.add('hidden');
+  document.getElementById('viewChart').classList.remove('hidden');
+
+  setDefaultFilterDates(); // Set UI dates
+  await fetchAndRenderChart(); // Ambil data default
+}
+
+function renderChart(data) {
+  if(myBarChartInstance) myBarChartInstance.destroy();
+  if(myLineChartInstance) myLineChartInstance.destroy();
+
+  const dailyData = data.dailyTrend;
+  const sessionData = data.sessionTrend;
+  const namesData = data.namesByCategory;
+
+  // --- 1. RANGKUMAN CARDS ---
+  const labelsDaily = Object.keys(dailyData);
+  const hadirData = labelsDaily.map(l => dailyData[l].hadir);
+  const pulangData = labelsDaily.map(l => dailyData[l].pulang);
+  const sakitData = labelsDaily.map(l => dailyData[l].sakit);
+  const alpaData = labelsDaily.map(l => dailyData[l].alpa);
+
+  const sumHadir = hadirData.reduce((a,b)=>a+b, 0);
+  const sumPulang = pulangData.reduce((a,b)=>a+b, 0);
+  const sumSakit = sakitData.reduce((a,b)=>a+b, 0);
+  const sumAlpa = alpaData.reduce((a,b)=>a+b, 0);
+
+  document.getElementById('chartSummary').innerHTML = `
+    <div class="bg-emerald-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-emerald-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-emerald-200/50 text-emerald-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-check"></i></div>
+      <p class="text-2xl font-extrabold text-emerald-700">${sumHadir}</p>
+      <p class="text-emerald-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Hadir</p>
+    </div>
+    <div class="bg-amber-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-amber-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-amber-200/50 text-amber-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-house"></i></div>
+      <p class="text-2xl font-extrabold text-amber-700">${sumPulang}</p>
+      <p class="text-amber-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Pulang</p>
+    </div>
+    <div class="bg-blue-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-blue-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-blue-200/50 text-blue-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-thermometer"></i></div>
+      <p class="text-2xl font-extrabold text-blue-700">${sumSakit}</p>
+      <p class="text-blue-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Sakit</p>
+    </div>
+    <div class="bg-rose-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-rose-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-rose-200/50 text-rose-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-x"></i></div>
+      <p class="text-2xl font-extrabold text-rose-700">${sumAlpa}</p>
+      <p class="text-rose-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Alpa</p>
+    </div>
+  `;
+
+  // --- 2. GRAFIK BATANG (BAR CHART) TREN HARIAN ---
+  const ctxBar = document.getElementById('attendanceChart').getContext('2d');
+  myBarChartInstance = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: labelsDaily.length ? labelsDaily : ['Belum ada data'],
+      datasets: [
+        { label: 'Hadir', data: hadirData, backgroundColor: '#10b981', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Pulang', data: pulangData, backgroundColor: '#f59e0b', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Sakit', data: sakitData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Alpa', data: alpaData, backgroundColor: '#f43f5e', borderRadius: 4, barPercentage: 0.7 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          padding: 12, cornerRadius: 12
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+
+  // --- 3. GRAFIK GARIS (LINE CHART) TREN SESI ---
+  document.getElementById('sessionChartLabel').innerText = `${data.filters.startDate} s/d ${data.filters.endDate}`;
+  
+  const ctxLine = document.getElementById('sessionLineChart').getContext('2d');
+  const gradientLine = ctxLine.createLinearGradient(0, 0, 0, 300);
+  gradientLine.addColorStop(0, 'rgba(79, 70, 229, 0.4)'); // Indigo semi-transparent
+  gradientLine.addColorStop(1, 'rgba(79, 70, 229, 0.0)'); // Transparan
+
+  const sessionLabels = Object.keys(sessionData);
+  const sessionValues = Object.values(sessionData);
+
+  myLineChartInstance = new Chart(ctxLine, {
+    type: 'line',
+    data: {
+      labels: sessionLabels.length ? sessionLabels : ['Belum ada data'],
+      datasets: [{
+        label: 'Total Kehadiran per Sesi',
+        data: sessionValues,
+        borderColor: '#4f46e5', // Indigo 600
+        backgroundColor: gradientLine,
+        borderWidth: 3,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#4f46e5',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4 // Curve mulus
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        legend: { display: false }, 
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          padding: 12, cornerRadius: 12, displayColors: false
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+
+  // --- 4. RENDER DAFTAR NAMA BERDASARKAN KATEGORI ---
+  const namesContainer = document.getElementById('namesListContainer');
+  namesContainer.innerHTML = '';
+  
+  let hasNames = false;
+  
+  for (const [kategori, lists] of Object.entries(namesData)) {
+    // Jika semua daftar kosong, lewati card ini
+    if (lists.sakit.length === 0 && lists.pulang.length === 0 && lists.alpa.length === 0) continue;
+    hasNames = true;
+
+    const getBadgeStyles = (type) => {
+      if(type === 'Sakit') return { bg: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-600', countBg: 'bg-blue-200', countText: 'text-blue-700', icon: 'text-blue-400' };
+      if(type === 'Pulang') return { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600', countBg: 'bg-amber-200', countText: 'text-amber-700', icon: 'text-amber-400' };
+      return { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600', countBg: 'bg-rose-200', countText: 'text-rose-700', icon: 'text-rose-400' }; 
+    };
+
+    const renderCol = (title, list) => {
+      const s = getBadgeStyles(title);
+      if (list.length === 0) return `<div class="bg-slate-50 p-3 rounded-xl border border-slate-100/60 opacity-80"><p class="text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">${title}</p><p class="text-xs text-slate-400 font-medium italic">Nihil</p></div>`;
+      
+      return `
+        <div class="${s.bg} p-3 rounded-xl border ${s.border}">
+           <p class="text-[11px] font-extrabold ${s.text} mb-2.5 uppercase tracking-wider flex items-center justify-between">
+             ${title} 
+             <span class="${s.countBg} ${s.countText} px-2 py-0.5 rounded-full text-[10px]">${list.length}</span>
+           </p>
+           <ul class="space-y-2">
+             ${list.map(n => `<li class="text-xs font-semibold text-slate-700 flex items-start gap-1.5 leading-tight"><i class="ph-fill ph-user-circle ${s.icon} mt-[1px] text-[15px]"></i> <span>${n}</span></li>`).join('')}
+           </ul>
+        </div>
+      `;
+    };
+
+    const cardHTML = `
+      <div class="bg-white rounded-[1.25rem] shadow-sm border border-slate-200 p-5 slide-up">
+        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2 text-sm">
+          <i class="ph-fill ph-folder-open text-indigo-500 text-xl"></i> ${kategori}
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          ${renderCol('Sakit', lists.sakit)}
+          ${renderCol('Pulang', lists.pulang)}
+          ${renderCol('Alpa', lists.alpa)}
+        </div>
+      </div>
+    `;
+    namesContainer.innerHTML += cardHTML;
+  }
+
+  // Pesan fallback jika bersih dari pelanggaran
+  if(!hasNames) {
+     namesContainer.innerHTML = `
+       <div class="text-center p-8 bg-white rounded-[1.5rem] border border-slate-200 border-dashed">
+         <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-duotone ph-check-circle text-4xl text-emerald-500"></i></div>
+         <p class="text-sm font-bold text-slate-700">Tidak ada data santri bermasalah</p>
+         <p class="text-xs text-slate-500 mt-1 font-medium">Ubah filter untuk melihat data lainnya.</p>
+       </div>
+     `;
+  }
+}
 
 function buatBlokKelas(groupName, namaSantri, isTahfizh, isCombined = false) {
   const div = document.createElement('div');
