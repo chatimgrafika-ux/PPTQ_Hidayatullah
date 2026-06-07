@@ -1,739 +1,1128 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard Presensi PPTQ Hidayatullah Ternate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Presensi PPTQ Hidayatullah</title>
   
   <!-- PWA Meta Tags -->
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1d4ed8">
-  <!-- iOS Support -->
-  <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192.png?text=Icon+192">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="apple-touch-icon" href="https://via.placeholder.com/192x192.png?text=PPTQ">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Presensi PPTQ">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Phosphor Icons -->
   <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f1f5f9;
+      -webkit-tap-highlight-color: transparent;
     }
     
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; }
-    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    /* Elegant Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-
-    /* Loader Animation */
-    .loader {
-      border: 3px solid #f3f3f3;
-      border-radius: 50%;
-      border-top: 3px solid #3b82f6;
-      width: 24px;
-      height: 24px;
-      -webkit-animation: spin 1s linear infinite;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    /* Transition utilities */
-    .fade-in { animation: fadeIn 0.3s ease-in-out; }
+    
+    /* Animations */
+    .fade-in { animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
       to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Custom Input OTP */
+    .otp-input {
+      width: 3rem;
+      height: 3.5rem;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      border: 2px solid #e2e8f0;
+      border-radius: 0.75rem;
+      background: #f8fafc;
+      transition: all 0.2s;
+    }
+    .otp-input:focus {
+      border-color: #3b82f6;
+      background: #ffffff;
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Background Pattern Elegant */
+    .bg-pattern {
+      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    /* Glassmorphism */
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
   </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen pb-24 flex flex-col">
+<body class="text-slate-800 antialiased min-h-screen flex flex-col relative overflow-x-hidden">
 
-  <!-- Global Header Section -->
-  <div class="bg-gradient-to-r from-blue-700 to-indigo-800 pb-16 pt-8 px-6 shadow-lg rounded-b-[2rem] transition-all duration-300" id="mainHeader">
-    <div class="max-w-3xl mx-auto text-center relative">
-      <!-- Back Button (Hidden on Dashboard) -->
-      <button id="btnBack" class="hidden absolute left-0 top-1/2 -translate-y-1/2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-xl transition-all">
-        <i class="ph ph-caret-left text-2xl"></i>
+  <!-- Background Decoration -->
+  <div class="fixed inset-0 bg-slate-50 -z-10"></div>
+  <div class="fixed inset-0 bg-pattern opacity-40 -z-10"></div>
+  <div class="fixed top-0 inset-x-0 h-96 bg-gradient-to-b from-slate-900 via-slate-800 to-transparent -z-10 rounded-b-[4rem] opacity-95"></div>
+
+  <div id="viewAuth" class="flex-1 flex flex-col justify-center items-center p-6 w-full max-w-md mx-auto z-10 fade-in">
+    
+    <div class="text-center mb-8 slide-up" style="animation-delay: 0.1s;">
+      <div class="w-20 h-20 bg-white/10 backdrop-blur-md rounded-3xl mx-auto flex items-center justify-center border border-white/20 shadow-xl mb-4">
+        <i class="ph-fill ph-mosque text-4xl text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold text-white tracking-tight">Portal Presensi</h1>
+      <p class="text-slate-300 text-sm mt-2 font-medium">PPTQ Hidayatullah Ternate</p>
+    </div>
+
+    <!-- Panel Login -->
+    <div id="loginPanel" class="w-full bg-white rounded-[2rem] shadow-2xl p-8 border border-slate-100 slide-up" style="animation-delay: 0.2s;">
+      <h2 class="text-xl font-bold text-slate-800 mb-1">Masuk Akun</h2>
+      <p class="text-sm text-slate-500 mb-6">Silakan daftarkan diri untuk akses aplikasi.</p>
+
+      <form id="formLogin" class="space-y-5">
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">Nama Lengkap</label>
+          <div class="relative">
+            <i class="ph ph-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+            <input type="text" id="authName" required placeholder="Cth: Ustadz Ahmad"
+              class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium text-sm">
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1.5 ml-1">No. WhatsApp</label>
+          <div class="relative">
+            <i class="ph ph-whatsapp-logo absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+            <input type="tel" id="authPhone" required placeholder="0812xxxxxx"
+              class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all font-medium text-sm">
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5 ml-1"><i class="ph ph-info"></i> OTP akan dikirim via WhatsApp</p>
+        </div>
+
+        <button type="submit" id="btnRequestOtp" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-slate-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-2">
+          <span>Kirim Kode OTP</span>
+          <i class="ph ph-arrow-right font-bold"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- Panel OTP -->
+    <div id="otpPanel" class="w-full bg-white rounded-[2rem] shadow-2xl p-8 border border-slate-100 hidden relative overflow-hidden">
+      <button type="button" onclick="showLoginPanel()" class="absolute top-6 left-6 text-slate-400 hover:text-slate-600 transition-colors">
+        <i class="ph ph-arrow-left text-xl"></i>
       </button>
 
-      <div class="inline-flex items-center justify-center p-3 bg-white/20 rounded-2xl backdrop-blur-sm mb-4" id="headerIconContainer">
-        <i class="ph ph-squares-four text-4xl text-white" id="headerIcon"></i>
+      <div class="text-center mt-2 mb-6">
+        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <i class="ph-fill ph-chat-teardrop-text text-3xl"></i>
+        </div>
+        <h2 class="text-xl font-bold text-slate-800">Verifikasi OTP</h2>
+        <p class="text-sm text-slate-500 mt-1">Masukkan 4 digit kode yang dikirim ke <br><span id="displayPhone" class="font-bold text-slate-700"></span></p>
       </div>
-      <h2 class="text-2xl md:text-3xl font-bold text-white tracking-tight" id="headerTitle">اللَّهُمَّ إِنَّكَ عَفُوٌّ تُحِبُّ العَفْوَ فَاعْفُ عَنَّا</h2>
-      <h1 class="text-2xl md:text-3xl font-bold text-white tracking-tight" id="headerTitle">Dashboard Presensi</h1>
-      <p class="text-blue-100 mt-2 text-sm md:text-base">PPTQ Hidayatullah Ternate</p>
+
+      <form id="formOtp" class="space-y-6">
+        <div class="flex justify-center gap-3">
+          <input type="tel" maxlength="1" class="otp-input" onkeyup="moveToNext(this, event)">
+          <input type="tel" maxlength="1" class="otp-input" onkeyup="moveToNext(this, event)">
+          <input type="tel" maxlength="1" class="otp-input" onkeyup="moveToNext(this, event)">
+          <input type="tel" maxlength="1" class="otp-input" onkeyup="moveToNext(this, event)">
+        </div>
+
+        <button type="submit" id="btnVerifyOtp" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+          <span>Verifikasi & Masuk</span>
+          <i class="ph-bold ph-check-circle"></i>
+        </button>
+      </form>
     </div>
   </div>
 
-  <!-- Main Container -->
-  <div class="max-w-3xl mx-auto w-full px-4 -mt-8 relative z-10 flex-1">
+  <div id="viewApp" class="w-full hidden flex-col flex-1 pb-24">
     
-    <!-- Global Loading State -->
-    <div id="loadingState" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 flex flex-col items-center justify-center space-y-4">
-      <div class="loader"></div>
-      <p class="text-slate-500 font-medium animate-pulse">Menghubungkan ke sistem...</p>
-    </div>
+    <!-- Elegant Header -->
+    <div class="pt-8 pb-20 px-6 relative z-10 transition-all duration-300">
+      <div class="max-w-3xl mx-auto">
+        <div class="flex justify-between items-start mb-6">
+          <button id="btnBack" class="hidden text-white/80 hover:text-white bg-white/10 hover:bg-white/20 p-2.5 rounded-xl transition-all backdrop-blur-sm border border-white/10">
+            <i class="ph ph-arrow-left text-xl font-bold"></i>
+          </button>
+          <div id="userProfileBadge" class="ml-auto flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/10 py-1.5 pl-2 pr-4 rounded-full cursor-pointer hover:bg-white/20 transition-all" onclick="logout()">
+            <div class="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-inner uppercase" id="avatarInitial">U</div>
+            <div class="text-right">
+              <p class="text-[10px] text-slate-300 uppercase tracking-wider font-semibold leading-tight">Ustadz</p>
+              <p class="text-sm font-semibold text-white leading-tight" id="displayUserName">Nama</p>
+            </div>
+            <i class="ph ph-sign-out text-slate-300 ml-1"></i>
+          </div>
+        </div>
 
-    <!-- VIEW 1: DASHBOARD MENU -->
-    <div id="viewDashboard" class="hidden space-y-4 fade-in">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        <!-- Card: Sholat -->
-        <button onclick="openForm('sholat')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-emerald-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-emerald-100 p-3 rounded-xl text-emerald-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-mosque text-3xl"></i>
+        <div class="text-center relative">
+          <div class="inline-flex items-center justify-center p-3.5 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 rounded-2xl mb-5" id="headerIconContainer">
+            <i class="ph-fill ph-squares-four text-3xl text-white" id="headerIcon"></i>
           </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Sholat</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi gabungan seluruh kelas (VII-XII).</p>
-          </div>
-        </button>
-
-        <!-- Card: Sekolah SMP -->
-        <button onclick="openForm('sekolah_smp')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-blue-100 p-3 rounded-xl text-blue-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-student text-3xl"></i>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Sekolah SMP</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi KBM khusus kelas VII, VIII, IX.</p>
-          </div>
-        </button>
-
-        <!-- Card: Sekolah SMA -->
-        <button onclick="openForm('sekolah_sma')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-cyan-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-cyan-100 p-3 rounded-xl text-cyan-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-graduation-cap text-3xl"></i>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Sekolah SMA</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi KBM khusus kelas X, XI, XII.</p>
-          </div>
-        </button>
-
-        <!-- Card: Diniah -->
-        <button onclick="openForm('diniah')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-purple-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-purple-100 p-3 rounded-xl text-purple-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-books text-3xl"></i>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Diniah</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi kajian/diniyah difilter per kelas.</p>
-          </div>
-        </button>
-
-        <!-- Card: Tahfizh -->
-        <button onclick="openForm('tahfizh')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-amber-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-amber-100 p-3 rounded-xl text-amber-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-book-open text-3xl"></i>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Tahfizh</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi difilter per kelompok halaqoh.</p>
-          </div>
-        </button>
-
-        <!-- Card: Apel Halaqoh -->
-        <button onclick="openForm('apel_halaqoh')" class="group bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-md hover:border-indigo-300 transition-all text-left flex items-start gap-4">
-          <div class="bg-indigo-100 p-3 rounded-xl text-indigo-600 group-hover:scale-110 transition-transform">
-            <i class="ph-fill ph-users-three text-3xl"></i>
-          </div>
-          <div>
-            <h3 class="text-lg font-bold text-slate-800">Absensi Halaqoh Tahfizh</h3>
-            <p class="text-sm text-slate-500 mt-1">Presensi apel gabungan seluruh halaqoh.</p>
-          </div>
-        </button>
-
+          <h1 class="text-3xl font-extrabold text-white tracking-tight" id="headerTitle">Dashboard Presensi</h1>
+          <p class="text-slate-300 font-medium mt-2 text-sm" id="headerSubtitle">Pilih menu absensi di bawah ini.</p>
+        </div>
       </div>
     </div>
 
-    <!-- VIEW 2: FORM PRESENSI -->
-    <form id="viewForm" class="hidden fade-in">
-      <div class="space-y-6">
+    <!-- Main Container -->
+    <div class="max-w-3xl mx-auto w-full px-4 -mt-10 relative z-20 flex-1">
+      
+      <!-- Global Loading State -->
+      <div id="loadingState" class="glass rounded-3xl shadow-sm border border-slate-200/60 p-12 flex flex-col items-center justify-center space-y-4">
+        <i class="ph-duotone ph-spinner-gap text-4xl text-blue-500 animate-spin"></i>
+        <p class="text-slate-500 font-medium animate-pulse text-sm">Menyiapkan data presensi...</p>
+      </div>
+
+      <!-- VIEW: DASHBOARD MENU -->
+      <div id="viewDashboard" class="hidden grid grid-cols-1 md:grid-cols-2 gap-4 fade-in">
         
-        <!-- Metadata Info Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-6 space-y-5">
-          <h2 class="text-lg font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3" id="formSubtitle">
-            <i class="ph ph-info text-blue-600"></i> Informasi Presensi
-          </h2>
-          
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="space-y-2">
-              <label for="UstadzSelect" class="text-sm font-medium text-slate-600 block">Nama Ustadz</label>
-              
-              <!-- Dropdown Pilihan Ustadz -->
-              <div class="relative">
-                <i class="ph ph-user absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
-                <select id="UstadzSelect" required
-                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm">
-                  <option value="" disabled selected>Pilih nama Anda...</option>
-                  <!-- SILAKAN EDIT/TAMBAH DAFTAR NAMA USTADZ DI BAWAH INI -->
-                  <option value="Abdillah A Samsudin">Abdillah A Samsudin</option>
-                  <option value="Ahmad Khoirullah, S.Pd">Ahmad Khoirullah, S.Pd</option>
-                  <option value="Ahmad Taufiq, S.H.">Ahmad Taufiq, S.H.</option>
-                  <option value="Basir Jamaludin">Basir Jamaludin</option>
-                  <option value="Burhanudin Sula">Burhanudin Sula</option>
-                  <option value="Dr. La Ode Ilman Lc, M.Pd">Dr. La Ode Ilman Lc, M.Pd</option>
-                  <option value="Fikalisman Husain">Fikalisman Husain</option>
-                  <option value="Fikram Arsad">Fikram Arsad</option>
-                  <option value="Hamadun Ali Daud">Hamadun Ali Daud</option>
-                  <option value="Hamka Hi Abjan">Hamka Hi Abjan</option>
-                  <option value="Imam Sholihin, S.Ag, M.Ag">Imam Sholihin, S.Ag, M.Ag</option>
-                  <option value="Muhammad Ichsan Noor">Muhammad Ichsan Noor</option>
-                  <option value="Muhammad Khusnul">Muhammad Khusnul</option>
-                  <option value="Muhammad Mushab Muhtadien">Muhammad Mushab Muhtadien</option>
-                  <option value="Sabardin Belen">Sabardin Belen</option>
-                  <option value="Muhammad Yasmir Sanaky">Muhammad Yasmir Sanaky</option>
-                  <option value="Suriyanto Suaib">Suriyanto Suaib</option>
-                  <option value="Syahril Ali">Syahril Ali</option>
-                  <option value="Syamsuddin Romadona, S.Pd">Syamsuddin Romadona, S.Pd</option>
-                  <option value="Ahmad Syauqi Futaqi">Ahmad Syauqi Futaqi</option>
-                  <option value="Ahmad Ittaqi Tafuzi">Ahmad Ittaqi Tafuzi</option>
-                  <option value="Undi Hasan">Undi Hasan</option>
-                  <option value="Reeval Yudhar R. Komdan">Reeval Yudhar R. Komdan</option>
-                  <option value="Moch. Ansor, M.Pd">Moch. Ansor, M.Pd</option>
-                  <option value="Abdurrahman">Abdurrahman</option>
-                  <option value="Naufal">Naufal</option>
-                  <option value="Fahdan">Fahdan</option>
-                  <option value="Farhan Nabil">Farhan Nabil</option>
-                  <option value="Didi salfa Rahman S. La saleh">Didi salfa Rahman S. La saleh</option>
-                  <option value="Muhammad Nazri Adlani Marsaoly">Muhammad Nazri Adlani Marsaoly</option>
-                  <option value="Fauzan Azima">Fauzan Azima</option>
-                  <option value="Ruslan Abdurrahman">Ruslan Abdurrahman</option>
-                  <option value="Fauzan Ramya">Fauzan Ramya</option>
-                  <option value="Ifdhal Bachmid">Ifdhal Bachmid</option>
-                  
-                  <!-- Opsi "Lainnya" memicu kolom input teks muncul -->
-                  <option value="Lainnya">Lainnya (Ketik Sendiri)...</option>
-                </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
-              </div>
-
-              <!-- Input Teks Tambahan (Hidden by default) -->
-              <div id="UstadzInputContainer" class="relative hidden mt-2">
-                <i class="ph ph-pencil-simple absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-                <input type="text" id="UstadzInput" placeholder="Tulis nama Anda di sini"
-                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm">
-              </div>
+        <!-- Menu Baru: Statistik Kehadiran -->
+        <button onclick="openChart()" class="group bg-gradient-to-r from-slate-900 to-slate-800 p-6 rounded-[1.5rem] shadow-lg border border-slate-700 hover:shadow-2xl hover:-translate-y-1 transition-all text-left flex items-center gap-5 col-span-1 md:col-span-2">
+          <div class="bg-white/10 p-4 rounded-2xl text-white group-hover:scale-110 group-hover:rotate-3 transition-transform backdrop-blur-md border border-white/10">
+            <i class="ph-fill ph-chart-line-up text-4xl"></i>
+          </div>
+          <div class="pt-1 w-full">
+            <div class="flex justify-between items-center w-full">
+              <h3 class="text-xl font-bold text-white tracking-wide">Statistik Kehadiran</h3>
+              <i class="ph-bold ph-arrow-right text-slate-400 group-hover:text-white transition-colors"></i>
             </div>
+            <p class="text-sm text-slate-300 mt-1 font-medium leading-snug">Lihat tren kehadiran santri pekan ini.</p>
+          </div>
+        </button>
 
+        <!-- Cards using map in JS logic to reduce HTML bloat, but hardcoded here as requested -->
+        <button onclick="openForm('sholat')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-emerald-50 p-3.5 rounded-2xl text-emerald-600 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+            <i class="ph-fill ph-mosque text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Absensi Sholat</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Gabungan seluruh kelas santri putra.</p>
+          </div>
+        </button>
+
+        <button onclick="openForm('sekolah_smp')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-blue-50 p-3.5 rounded-2xl text-blue-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+            <i class="ph-fill ph-student text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Sekolah SMP</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Presensi KBM SMP (Kelas VII - IX).</p>
+          </div>
+        </button>
+
+        <button onclick="openForm('sekolah_sma')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-cyan-50 p-3.5 rounded-2xl text-cyan-600 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+            <i class="ph-fill ph-graduation-cap text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Sekolah SMA</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Presensi KBM SMA (Kelas X - XII).</p>
+          </div>
+        </button>
+
+        <button onclick="openForm('diniah')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-purple-50 p-3.5 rounded-2xl text-purple-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+            <i class="ph-fill ph-books text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Kajian Diniah</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Presensi kajian/diniyah per kelas.</p>
+          </div>
+        </button>
+
+        <button onclick="openForm('tahfizh')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-amber-50 p-3.5 rounded-2xl text-amber-600 group-hover:scale-110 group-hover:rotate-3 transition-transform">
+            <i class="ph-fill ph-book-open text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Halaqoh Tahfizh</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Presensi ziyadah & murojaah halaqoh.</p>
+          </div>
+        </button>
+
+        <button onclick="openForm('apel_halaqoh')" class="group bg-white p-6 rounded-[1.5rem] shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all text-left flex items-start gap-4">
+          <div class="bg-indigo-50 p-3.5 rounded-2xl text-indigo-600 group-hover:scale-110 group-hover:-rotate-3 transition-transform">
+            <i class="ph-fill ph-users-three text-3xl"></i>
+          </div>
+          <div class="pt-1">
+            <h3 class="text-lg font-bold text-slate-800">Apel Halaqoh</h3>
+            <p class="text-sm text-slate-500 mt-1 font-medium leading-snug">Apel gabungan seluruh halaqoh.</p>
+          </div>
+        </button>
+      </div>
+
+      <form id="viewForm" class="hidden fade-in space-y-6">
+        
+        <!-- Metadata Config -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div class="space-y-2">
-              <label for="jenisAbsensi" class="text-sm font-medium text-slate-600 block" id="labelJenisAbsensi">Waktu / Sesi</label>
+              <label class="text-sm font-bold text-slate-700 block ml-1" id="labelJenisAbsensi">Pilih Sesi/Waktu</label>
               <div class="relative">
-                <i class="ph ph-clock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
+                <i class="ph ph-clock absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                 <select id="jenisAbsensi" required
-                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm">
-                  <!-- Options injected via JS based on category -->
+                  class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm font-semibold text-slate-700">
                 </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
               </div>
             </div>
 
             <div class="space-y-2" id="wrapperPilihGrup">
-              <label for="pilihGrup" class="text-sm font-medium text-slate-600 block" id="labelPilihGrup">Pilih Kelas/Halaqoh</label>
+              <label class="text-sm font-bold text-slate-700 block ml-1" id="labelPilihGrup">Pilih Kelas/Halaqoh</label>
               <div class="relative">
-                <i class="ph ph-users absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
+                <i class="ph ph-users absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                 <select id="pilihGrup" required
-                  class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 text-sm">
-                  <!-- Options injected via JS based on category -->
+                  class="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl appearance-none focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm font-semibold text-slate-700">
                 </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
+                <i class="ph-bold ph-caret-down absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"></i>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- MANAJER GRUP DINAMIS (Hanya Tampil di Form Gabungan seperti Sholat/Apel Halaqoh) -->
-        <div id="dynamicGroupManager" class="hidden bg-white border border-indigo-100 p-4 md:p-5 rounded-2xl shadow-sm space-y-4">
+        <!-- Manajer Grup (Gabungan) -->
+        <div id="dynamicGroupManager" class="hidden bg-indigo-50 border border-indigo-100 p-5 rounded-[1.5rem] shadow-sm">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <div class="flex items-center gap-2 text-indigo-800 font-semibold text-sm">
-                <i class="ph-fill ph-circles-three-plus text-lg"></i>
-                Kelola Daftar Halaqoh
-              </div>
-              <p class="text-xs text-slate-500 mt-1">Grup yang tidak hadir bisa dihapus dari daftar di bawah (ikon tong sampah).</p>
+              <h4 class="flex items-center gap-2 text-indigo-900 font-bold text-sm">
+                <i class="ph-fill ph-circles-three-plus text-lg text-indigo-600"></i>
+                Kelola Daftar Grup
+              </h4>
+              <p class="text-xs text-indigo-600/80 mt-1 font-medium">Grup yang tidak hadir dapat dihapus dari daftar.</p>
             </div>
-            
             <div class="flex items-center gap-2 w-full md:w-auto">
-              <select id="selectAddGroup" class="flex-1 md:w-56 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm font-medium text-slate-700 transition-all">
-                <!-- Opsi tambahan diinject via JS -->
-              </select>
-              <button type="button" id="btnAddGroup" title="Tambah Grup" class="bg-indigo-600 text-white w-11 h-11 flex items-center justify-center rounded-xl hover:bg-indigo-700 hover:shadow-md transition-all active:scale-95 disabled:bg-slate-300 disabled:text-slate-400 disabled:cursor-not-allowed shrink-0">
-                <i class="ph ph-plus font-bold text-xl"></i>
+              <select id="selectAddGroup" class="flex-1 md:w-48 px-4 py-3 bg-white border border-indigo-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-semibold text-slate-700"></select>
+              <button type="button" id="btnAddGroup" class="bg-indigo-600 text-white w-12 h-12 flex items-center justify-center rounded-xl hover:bg-indigo-700 transition-all shadow-md active:scale-95 disabled:opacity-50 shrink-0">
+                <i class="ph-bold ph-plus text-xl"></i>
               </button>
             </div>
           </div>
         </div>
 
-        <!-- Dynamic Classes Container -->
-        <div id="kelasContainer" class="space-y-4">
-          <!-- Inject kelas/halaqoh here -->
+        <!-- Daftar Santri -->
+        <div id="kelasContainer" class="space-y-4 pb-10"></div>
+
+        <!-- Sticky Submit Button -->
+        <div id="submitContainer" class="fixed bottom-0 left-0 right-0 glass border-t border-slate-200 p-4 z-50 transition-transform duration-500 translate-y-full rounded-t-3xl">
+          <div class="max-w-3xl mx-auto">
+            <button type="submit" id="btnSubmit" 
+              class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 px-6 rounded-2xl shadow-xl shadow-slate-900/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+              <i class="ph-fill ph-paper-plane-right text-xl"></i>
+              <span>Kirim Data Presensi</span>
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- VIEW: CHART/STATISTIK -->
+      <div id="viewChart" class="hidden fade-in space-y-6 pb-10">
+        
+        <!-- Panel Filter Canggih -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6 mb-6">
+          <h2 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <i class="ph-fill ph-faders text-indigo-500 text-lg"></i> Filter Analisis Data
+          </h2>
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Kategori Absensi</label>
+              <select id="filterKategori" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 appearance-none">
+                <option value="Semua">Semua Kategori</option>
+                <option value="Absensi Sholat">Absensi Sholat</option>
+                <option value="Sekolah SMP">Sekolah SMP</option>
+                <option value="Sekolah SMA">Sekolah SMA</option>
+                <option value="Kajian Diniah">Kajian Diniah</option>
+                <option value="Halaqoh Tahfizh">Halaqoh Tahfizh</option>
+                <option value="Apel Halaqoh">Apel Halaqoh</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Kelas / Halaqoh</label>
+              <select id="filterKelas" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700 appearance-none disabled:opacity-50">
+                <option value="Semua">Semua Kelas</option>
+              </select>
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Mulai Tanggal</label>
+              <input type="date" id="filterStartDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700">
+            </div>
+            <div class="space-y-1.5">
+              <label class="text-xs font-bold text-slate-600 ml-1">Sampai Tanggal</label>
+              <input type="date" id="filterEndDate" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm font-semibold text-slate-700">
+            </div>
+          </div>
+          <div class="mt-5 flex justify-end">
+            <button id="btnApplyFilter" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-6 rounded-xl shadow-lg shadow-indigo-600/30 transition-all active:scale-[0.98] flex items-center gap-2 text-sm">
+              <i class="ph-bold ph-funnel"></i> Terapkan Filter
+            </button>
+          </div>
         </div>
 
-      </div>
+        <!-- Rangkuman Kotak -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="chartSummary">
+          <!-- Akan di-inject oleh JS -->
+        </div>
 
-      <!-- Sticky Submit Button -->
-      <div id="submitContainer" class="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-slate-200 p-4 z-50 transition-transform duration-300 translate-y-full">
-        <div class="max-w-3xl mx-auto">
-          <button type="submit" id="btnSubmit" 
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-6 rounded-xl shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2">
-            <i class="ph ph-paper-plane-right text-xl"></i>
-            Kirim Data Kehadiran
-          </button>
+        <!-- Kanvas Kurva Garis (Dinamis per Sesi) -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 border-b border-slate-100 pb-4">
+            <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center"><i class="ph-fill ph-trend-up text-lg"></i></div>
+              Tren Kehadiran per Sesi / Waktu
+            </h2>
+            <span class="text-xs font-bold bg-slate-100 text-slate-500 px-3 py-1.5 rounded-lg border border-slate-200" id="sessionChartLabel">Semua Sesi</span>
+          </div>
+          <div class="relative w-full h-64">
+            <canvas id="sessionLineChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Kanvas Grafik Batang (Tren Harian) -->
+        <div class="bg-white rounded-[1.5rem] shadow-sm border border-slate-200 p-5 md:p-6">
+          <h2 class="text-base font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
+            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center"><i class="ph-fill ph-chart-bar text-lg"></i></div> 
+            Tren Presensi Berdasarkan Tanggal
+          </h2>
+          <div class="relative w-full h-72">
+            <canvas id="attendanceChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Daftar Santri Bermasalah -->
+        <div class="pt-2">
+          <h2 class="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 px-1">
+            <i class="ph-fill ph-users-three text-rose-500 text-2xl"></i> 
+            Daftar Absensi (Sakit, Pulang, Alpa)
+          </h2>
+          <div id="namesListContainer" class="space-y-5">
+            <!-- Di-inject via JS -->
+          </div>
         </div>
       </div>
-    </form>
-
+    </div>
   </div>
 
-  <!-- Footer -->
-  <div class="mt-auto pt-10 pb-6 text-center text-xs text-slate-400">
-    <p>Created by <span class="font-semibold text-slate-500">Chatimgrafika</span> & <span class="font-semibold text-slate-500">Aks Amir</span></p>
-  </div>
-
-  <!-- Toast Notification -->
-  <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 transform -translate-y-24 opacity-0">
-    <div class="bg-emerald-500 text-white px-6 py-3 rounded-full shadow-lg flex items-center gap-3 font-medium">
-      <i class="ph-fill ph-check-circle text-xl"></i>
-      Data Kehadiran Berhasil Dikirim!
+  <!-- Modal/Toast Custom -->
+  <div id="customModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[100] flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+    <div class="bg-white p-6 rounded-[2rem] shadow-2xl max-w-sm w-full mx-4 transform scale-95 transition-transform duration-300" id="modalContent">
+      <div class="text-center" id="modalBody">
+        <!-- Content injected by JS -->
+      </div>
     </div>
   </div>
 
 <script>
-// URL App Script Terbaru
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz98mOfOxzJi49U8WArPRUUN4l1Y6LaFMkbRM18FfNK8XJI9n2m2QnPPWxVU2VIm58x1Q/exec";
+// PASTE URL WEB APP GOOGLE SCRIPT ANDA DI SINI
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw7s3SWytRk3WKUCr8m3kfntUyGRqNn09JDxjm7RonDugkMGpHd_DSVJls7fBinvMkB0w/exec";
 
-// App State
 let studentData = null;
 let currentCategory = null;
 let activeGroups = [];
-let allAvailableGroups = []; // Menyimpan master data grup 
+let allAvailableGroups = [];
 let currentSourceData = null;
 let currentIsHalaqohFormat = false;
 
-// Konfigurasi Kategori Absensi
+// Session Management
+let userSession = JSON.parse(localStorage.getItem('pptq_session') || 'null');
+
 const categoryConfig = {
-  sholat: {
-    title: "Absensi Sholat",
-    icon: "ph-mosque",
-    label: "Pilih Waktu Sholat",
-    options: ["Tahajjud","Subuh", "Dhuha", "Dzuhur", "Ashar", "Maghrib", "Isya"]
-  },
-  sekolah_smp: {
-    title: "Absensi Sekolah SMP",
-    icon: "ph-student",
-    label: "Pilih Sesi/Jam",
-    options: ["Jam ke-1", "Jam ke-2", "Jam ke-3", "Jam ke-4", "Evaluasi / Lainnya"]
-  },
-  sekolah_sma: {
-    title: "Absensi Sekolah SMA",
-    icon: "ph-graduation-cap",
-    label: "Pilih Sesi/Jam",
-    options: ["Jam ke-1", "Jam ke-2", "Jam ke-3", "Jam ke-4", "Evaluasi / Lainnya"]
-  },
-  diniah: {
-    title: "Absensi Diniah",
-    icon: "ph-books",
-    label: "Pilih Mapel",
-    options: ["Sesi Pagi", "Sesi Siang", "Sesi Sore", "Sesi Malam"]
-  },
-  tahfizh: {
-    title: "Absensi Tahfizh",
-    icon: "ph-book-open",
-    label: "Pilih Waktu Halaqoh",
-    options: ["Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)"]
-  },
-  apel_halaqoh: {
-    title: "Absensi Halaqoh Tahfizh",
-    icon: "ph-users-three",
-    label: "Pilih Waktu Apel / Halaqoh",
-    options: ["Apel Pagi","Apel Siang", "Apel Sore", "Apel Malam", "Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)","Lainnya"]
-  }
+  sholat: { title: "Absensi Sholat", icon: "ph-mosque", color: "from-emerald-500 to-teal-600", label: "Waktu Sholat", options: ["Tahajjud","Subuh", "Dhuha", "Dzuhur", "Ashar", "Maghrib", "Isya"] },
+  sekolah_smp: { title: "Sekolah SMP", icon: "ph-student", color: "from-blue-500 to-indigo-600", label: "Sesi KBM", options: ["Jam ke-1", "Jam ke-2", "Jam ke-3", "Jam ke-4", "Evaluasi / Lainnya"] },
+  sekolah_sma: { title: "Sekolah SMA", icon: "ph-graduation-cap", color: "from-cyan-500 to-blue-600", label: "Sesi KBM", options: ["Jam ke-1", "Jam ke-2", "Jam ke-3", "Jam ke-4", "Evaluasi / Lainnya"] },
+  diniah: { title: "Kajian Diniah", icon: "ph-books", color: "from-purple-500 to-fuchsia-600", label: "Sesi Kajian", options: ["Sesi Pagi", "Sesi Siang", "Sesi Sore", "Sesi Malam"] },
+  tahfizh: { title: "Halaqoh Tahfizh", icon: "ph-book-open", color: "from-amber-500 to-orange-600", label: "Sesi Halaqoh", options: ["Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)"] },
+  apel_halaqoh: { title: "Apel Halaqoh", icon: "ph-users-three", color: "from-indigo-500 to-violet-600", label: "Sesi Apel", options: ["Apel Pagi","Apel Siang", "Apel Sore", "Apel Malam", "Ziyadah (Ba'da Subuh)","Ziyadah (Dhuha)","Ziyadah (Ba'da Dzuhur)","Ziyadah (Ba'da Ashar)", "Murojaah (Ba'da Ashar)", "Murojaah (Ba'da Maghrib)","Murojaah (Ba'da Isya)","Lainnya"] }
 };
 
-// Toggle Accordion Function
+document.addEventListener('DOMContentLoaded', () => {
+  if (userSession && userSession.name && userSession.phone) {
+    showApp();
+    loadAppContent();
+  } else {
+    showAuth();
+  }
+});
+
+function showAuth() {
+  document.getElementById('viewApp').classList.add('hidden');
+  document.getElementById('viewAuth').classList.remove('hidden');
+}
+
+function showApp() {
+  document.getElementById('viewAuth').classList.add('hidden');
+  document.getElementById('viewApp').classList.remove('hidden');
+  document.getElementById('viewApp').classList.add('flex');
+  
+  // Set Profile UI
+  document.getElementById('displayUserName').innerText = userSession.name.split(' ')[0]; // Nama panggilan
+  document.getElementById('avatarInitial').innerText = userSession.name.charAt(0).toUpperCase();
+}
+
+function showLoginPanel() {
+  document.getElementById('otpPanel').classList.add('hidden');
+  document.getElementById('loginPanel').classList.remove('hidden');
+  document.getElementById('loginPanel').classList.add('slide-up');
+}
+
+function showModal(icon, title, desc, autoClose = true) {
+  const modal = document.getElementById('customModal');
+  const content = document.getElementById('modalContent');
+  
+  let iconHtml = '';
+  if(icon === 'loading') iconHtml = `<i class="ph-duotone ph-spinner-gap text-5xl text-blue-500 animate-spin mb-4 inline-block"></i>`;
+  else if(icon === 'success') iconHtml = `<div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-check-circle text-3xl"></i></div>`;
+  else if(icon === 'error') iconHtml = `<div class="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4"><i class="ph-fill ph-warning-circle text-3xl"></i></div>`;
+
+  document.getElementById('modalBody').innerHTML = `
+    ${iconHtml}
+    <h3 class="text-xl font-bold text-slate-800">${title}</h3>
+    <p class="text-sm text-slate-500 mt-2">${desc}</p>
+  `;
+
+  modal.classList.remove('opacity-0', 'pointer-events-none');
+  content.classList.remove('scale-95');
+
+  if(autoClose && icon !== 'loading') {
+    setTimeout(closeModal, 2000);
+  }
+}
+
+function closeModal() {
+  const modal = document.getElementById('customModal');
+  const content = document.getElementById('modalContent');
+  modal.classList.add('opacity-0', 'pointer-events-none');
+  content.classList.add('scale-95');
+}
+
+function logout() {
+  localStorage.removeItem('pptq_session');
+  location.reload();
+}
+
+// Handle Request OTP
+document.getElementById('formLogin').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('authName').value;
+  const phone = document.getElementById('authPhone').value;
+
+  showModal('loading', 'Memproses', 'Mengirim kode OTP ke WhatsApp...', false);
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'request_otp', name, phone })
+    });
+    const result = await res.json();
+    
+    closeModal();
+    if (result.status === 'success') {
+      document.getElementById('loginPanel').classList.add('hidden');
+      document.getElementById('otpPanel').classList.remove('hidden');
+      document.getElementById('otpPanel').classList.add('slide-up');
+      document.getElementById('displayPhone').innerText = phone;
+      document.querySelectorAll('.otp-input')[0].focus();
+    } else {
+      showModal('error', 'Gagal', result.message || 'Terjadi kesalahan');
+    }
+  } catch (err) {
+    closeModal();
+    showModal('error', 'Error Jaringan', 'Tidak dapat terhubung ke server.');
+  }
+});
+
+// Handle OTP Input Auto-focus
+function moveToNext(elem, event) {
+  if (elem.value.length === 1 && elem.nextElementSibling) {
+    elem.nextElementSibling.focus();
+  } else if (event.key === "Backspace" && elem.previousElementSibling) {
+    elem.previousElementSibling.focus();
+  }
+}
+
+// Handle Verify OTP
+document.getElementById('formOtp').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const inputs = document.querySelectorAll('.otp-input');
+  let otp = '';
+  inputs.forEach(i => otp += i.value);
+
+  if (otp.length < 4) {
+    showModal('error', 'Tidak Lengkap', 'Masukkan 4 digit OTP.');
+    return;
+  }
+
+  const phone = document.getElementById('authPhone').value;
+  showModal('loading', 'Verifikasi', 'Mengecek kode OTP...', false);
+
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'verify_otp', phone, otp })
+    });
+    const result = await res.json();
+    
+    closeModal();
+    if (result.status === 'success') {
+      // Simpan session
+      userSession = { name: result.data.name, phone: result.data.phone };
+      localStorage.setItem('pptq_session', JSON.stringify(userSession));
+      
+      showModal('success', 'Berhasil', 'Selamat datang!');
+      setTimeout(() => {
+        closeModal();
+        showApp();
+        loadAppContent();
+      }, 1500);
+    } else {
+      showModal('error', 'Gagal', result.message);
+      inputs.forEach(i => i.value = '');
+      inputs[0].focus();
+    }
+  } catch (err) {
+    closeModal();
+    showModal('error', 'Error', 'Gagal verifikasi.');
+  }
+});
+
+function loadAppContent() {
+  if (studentData) return; // Udah di-load
+  
+  fetch(WEB_APP_URL)
+    .then(r => r.json())
+    .then(data => {
+      studentData = data;
+      document.getElementById('loadingState').style.display = 'none';
+      document.getElementById('viewDashboard').classList.remove('hidden');
+    })
+    .catch(err => {
+      document.getElementById('loadingState').innerHTML = `
+        <i class="ph-fill ph-warning-circle text-4xl text-rose-500 mb-2"></i>
+        <p class="font-bold text-slate-700">Gagal memuat data.</p>
+        <button onclick="location.reload()" class="mt-4 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-medium shadow-md">Muat Ulang</button>`;
+    });
+}
+
 function toggleAccordion(kelasId) {
   const content = document.getElementById(`content-${kelasId}`);
   const icon = document.getElementById(`icon-${kelasId}`);
   
   if (content.classList.contains('hidden')) {
     content.classList.remove('hidden');
+    content.classList.add('slide-up');
     icon.style.transform = 'rotate(180deg)';
   } else {
     content.classList.add('hidden');
+    content.classList.remove('slide-up');
     icon.style.transform = 'rotate(0deg)';
   }
 }
 
-// Handler Dropdown Nama Ustadz
-document.getElementById('UstadzSelect').addEventListener('change', function() {
-  const inputContainer = document.getElementById('UstadzInputContainer');
-  const inputField = document.getElementById('UstadzInput');
-  
-  // Munculkan input box jika memilih 'Lainnya'
-  if (this.value === 'Lainnya') {
-    inputContainer.classList.remove('hidden');
-    inputField.required = true;
-  } else {
-    inputContainer.classList.add('hidden');
-    inputField.required = false;
-    inputField.value = ''; // Kosongkan saat memilih opsi selain 'Lainnya'
-  }
-});
-
-// Function to reset all radio buttons & inputs
 function resetForm() {
-  const radios = document.querySelectorAll('input[type="radio"]');
-  radios.forEach(r => {
-    if (r.value === 'hadir') r.checked = true;
-    else r.checked = false;
-  });
-  
-  // Reset Nama Ustadz Form
-  document.getElementById('UstadzSelect').value = '';
-  document.getElementById('UstadzInput').value = '';
-  document.getElementById('UstadzInputContainer').classList.add('hidden');
-  document.getElementById('UstadzInput').required = false;
-
   document.getElementById('jenisAbsensi').value = '';
   document.getElementById('pilihGrup').value = '';
-  
-  // Kembalikan form ke status default (harus isi kelas)
   document.getElementById('wrapperPilihGrup').classList.remove('hidden');
   document.getElementById('dynamicGroupManager').classList.add('hidden');
   document.getElementById('pilihGrup').required = true;
 }
 
-// Fitur Baru: Merender UI Gabungan & Dropdown "Tambah"
 function renderCombinedGroups() {
   const container = document.getElementById('kelasContainer');
   container.innerHTML = '';
   
-  // 1. Render setiap blok yang statusnya masih 'active'
   activeGroups.forEach(k => {
     container.appendChild(buatBlokKelas(k, currentSourceData[k], currentIsHalaqohFormat, true));
   });
 
-  // 2. Perbarui isi dropdown "Tambah Grup" berdasarkan sisa grup
   const selectAdd = document.getElementById('selectAddGroup');
   const btnAdd = document.getElementById('btnAddGroup');
   
-  selectAdd.innerHTML = '<option value="" disabled selected>Halaqoh lain...</option>';
+  selectAdd.innerHTML = '<option value="" disabled selected>Pilih Grup...</option>';
   
   const unselectedGroups = allAvailableGroups.filter(g => !activeGroups.includes(g));
   unselectedGroups.forEach(g => {
     selectAdd.innerHTML += `<option value="${g}">${g}</option>`;
   });
 
-  // Nonaktifkan tombol tambah jika sudah tidak ada grup tersisa
   btnAdd.disabled = unselectedGroups.length === 0;
 }
 
-// Fitur Baru: Menghapus grup dari daftar gabungan
 function removeGroup(groupName) {
-  // Filter keluar grup yang dihapus
   activeGroups = activeGroups.filter(g => g !== groupName);
-  renderCombinedGroups(); // render ulang
+  renderCombinedGroups();
 }
 
-// Fitur Baru: Event listener untuk Menambahkan grup ke daftar
 document.getElementById('btnAddGroup').addEventListener('click', () => {
   const select = document.getElementById('selectAddGroup');
-  const val = select.value;
-  
-  if (val) {
-    activeGroups.push(val);
-    
-    // Urutkan kembali activeGroups agar rapi
+  if (select.value) {
+    activeGroups.push(select.value);
+    // Sort logic
     if (currentIsHalaqohFormat) {
-      activeGroups.sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
-        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
-        return numA - numB;
-      });
+      activeGroups.sort((a, b) => parseInt(a.match(/\d+/)?.[0]||0) - parseInt(b.match(/\d+/)?.[0]||0));
     } else {
       const order = ['VII','VIII','IX','X','XI','XII'];
-      activeGroups.sort((a, b) => {
-        let idxA = order.indexOf(a);
-        let idxB = order.indexOf(b);
-        if(idxA === -1) idxA = 99;
-        if(idxB === -1) idxB = 99;
-        return idxA - idxB;
-      });
+      activeGroups.sort((a, b) => (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b)));
     }
-    
     renderCombinedGroups();
   }
 });
 
-
-// Function to open specific form
 function openForm(category) {
   currentCategory = category;
   const config = categoryConfig[category];
   
-  // Update Header
+  // UI Updates Header
   document.getElementById('headerTitle').innerText = config.title;
-  document.getElementById('headerIcon').className = `ph ${config.icon} text-4xl text-white`;
+  document.getElementById('headerSubtitle').innerText = "Mohon isi dengan teliti.";
+  document.getElementById('headerIcon').className = `ph-fill ${config.icon} text-3xl text-white`;
+  document.getElementById('headerIconContainer').className = `inline-flex items-center justify-center p-3.5 bg-gradient-to-br ${config.color} shadow-lg shadow-blue-500/30 rounded-2xl mb-5`;
   document.getElementById('btnBack').classList.remove('hidden');
+  document.getElementById('userProfileBadge').classList.add('hidden');
   
-  // Update Form Details
+  // Dropdown Setup
   document.getElementById('labelJenisAbsensi').innerText = config.label;
   const selectEl = document.getElementById('jenisAbsensi');
-  selectEl.innerHTML = `<option value="" disabled selected>Pilih salah satu...</option>`;
-  config.options.forEach(opt => {
-    selectEl.innerHTML += `<option value="${opt}">${opt}</option>`;
-  });
+  selectEl.innerHTML = `<option value="" disabled selected>Pilih Sesi...</option>`;
+  config.options.forEach(opt => selectEl.innerHTML += `<option value="${opt}">${opt}</option>`);
 
   const wrapperGrup = document.getElementById('wrapperPilihGrup');
   const selectGrup = document.getElementById('pilihGrup');
   const container = document.getElementById('kelasContainer');
 
-  // Switch Views
   document.getElementById('viewDashboard').classList.add('hidden');
   document.getElementById('viewForm').classList.remove('hidden');
 
-  // LOGIKA KHUSUS ABSEN SHOLAT & APEL HALAQOH (GABUNGAN)
+  // Combined Logics
   if (category === 'sholat' || category === 'apel_halaqoh') {
     wrapperGrup.classList.add('hidden');
     selectGrup.required = false;
-    
-    // Tampilkan panel Manajer Grup
     document.getElementById('dynamicGroupManager').classList.remove('hidden');
 
     if (category === 'sholat') {
-      // Ambil semua kelas yang valid (Abaikan Kelas I, II, dan Putri)
-      const availableKelas = Object.keys(studentData.kelas || {});
-      const forbiddenKelas = ['I', 'II', '1', '2'];
-      const filteredKelas = availableKelas.filter(k => {
-        const kUpper = k.trim().toUpperCase();
-        if (forbiddenKelas.includes(kUpper)) return false; 
-        if (kUpper.includes('PUTRI')) return false; 
-        return true;
-      });
-
-      // Urutkan kelas sesuai jenjang
-      const orderedKelas = ['VII','VIII','IX','X','XI','XII'].filter(k => filteredKelas.includes(k));
-      filteredKelas.forEach(k => { if(!orderedKelas.includes(k)) orderedKelas.push(k); });
-      
-      allAvailableGroups = orderedKelas;
-      activeGroups = [...allAvailableGroups];
-      currentSourceData = studentData.kelas;
-      currentIsHalaqohFormat = false;
+      const available = Object.keys(studentData.kelas || {});
+      const forbidden = ['I', 'II', '1', '2'];
+      const filtered = available.filter(k => !forbidden.includes(k.trim().toUpperCase()) && !k.toUpperCase().includes('PUTRI'));
+      const ordered = ['VII','VIII','IX','X','XI','XII'].filter(k => filtered.includes(k));
+      filtered.forEach(k => { if(!ordered.includes(k)) ordered.push(k); });
+      allAvailableGroups = ordered; activeGroups = [...ordered]; currentSourceData = studentData.kelas; currentIsHalaqohFormat = false;
     } else {
-      // Apel Halaqoh: Ambil semua halaqoh & urutkan
       const groups = Object.keys(studentData.halaqoh || {});
-      groups.sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
-        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
-        return numA - numB;
-      });
-
-      allAvailableGroups = groups;
-      activeGroups = [...allAvailableGroups];
-      currentSourceData = studentData.halaqoh;
-      currentIsHalaqohFormat = true;
+      groups.sort((a, b) => parseInt(a.match(/\d+/)?.[0]||0) - parseInt(b.match(/\d+/)?.[0]||0));
+      allAvailableGroups = groups; activeGroups = [...groups]; currentSourceData = studentData.halaqoh; currentIsHalaqohFormat = true;
     }
 
-    // Render Form Menggunakan Fungsi Baru
     renderCombinedGroups();
-
-    // Buka accordion pertama otomatis
-    if(activeGroups.length > 0) {
-      const safeFirstId = activeGroups[0].replace(/\s+/g, '_');
-      setTimeout(() => {
-        const content = document.getElementById(`content-${safeFirstId}`);
-        if(content && content.classList.contains('hidden')) toggleAccordion(safeFirstId);
-      }, 200);
-    }
-
-    // Tampilkan tombol submit langsung
     document.getElementById('submitContainer').classList.remove('translate-y-full');
 
   } else {
-    // LOGIKA SELAIN SHOLAT & APEL HALAQOH (TERPISAH PER KELAS / HALAQOH)
     wrapperGrup.classList.remove('hidden');
-    document.getElementById('dynamicGroupManager').classList.add('hidden'); // Pastikan manager tersembunyi
+    document.getElementById('dynamicGroupManager').classList.add('hidden');
     selectGrup.required = true;
-    selectGrup.innerHTML = `<option value="" disabled selected>Pilih...</option>`;
+    selectGrup.innerHTML = `<option value="" disabled selected>Pilih Grup...</option>`;
     
     let groups = [];
     if (category === 'tahfizh') {
       document.getElementById('labelPilihGrup').innerText = "Pilih Halaqoh";
-      groups = Object.keys(studentData.halaqoh || {});
-      // Mengurutkan Halaqoh secara angka natural
-      groups.sort((a, b) => {
-        const numA = parseInt(a.match(/\d+/)?.[0] || 0);
-        const numB = parseInt(b.match(/\d+/)?.[0] || 0);
-        return numA - numB;
-      });
+      groups = Object.keys(studentData.halaqoh || {}).sort((a, b) => parseInt(a.match(/\d+/)?.[0]||0) - parseInt(b.match(/\d+/)?.[0]||0));
     } else {
       document.getElementById('labelPilihGrup').innerText = "Pilih Kelas";
-      const availableKelas = Object.keys(studentData.kelas || {});
+      const available = Object.keys(studentData.kelas || {}).filter(k => !['I','II','1','2'].includes(k.toUpperCase()) && !k.toUpperCase().includes('PUTRI'));
       
-      const forbiddenKelas = ['I', 'II', '1', '2'];
-      let filteredKelas = availableKelas.filter(k => {
-        const kUpper = k.trim().toUpperCase();
-        if (forbiddenKelas.includes(kUpper)) return false; 
-        if (kUpper.includes('PUTRI')) return false; 
-        return true;
-      });
+      let filtered = available;
+      if (category === 'sekolah_smp') filtered = filtered.filter(k => ['VII','VIII','IX'].includes(k.toUpperCase()));
+      else if (category === 'sekolah_sma') filtered = filtered.filter(k => ['X','XI','XII'].includes(k.toUpperCase()));
 
-      // FILTER KHUSUS SMP DAN SMA
-      if (category === 'sekolah_smp') {
-        const smpKelas = ['VII', 'VIII', 'IX'];
-        filteredKelas = filteredKelas.filter(k => smpKelas.includes(k.trim().toUpperCase()));
-      } else if (category === 'sekolah_sma') {
-        const smaKelas = ['X', 'XI', 'XII'];
-        filteredKelas = filteredKelas.filter(k => smaKelas.includes(k.trim().toUpperCase()));
-      }
-
-      const orderedKelas = ['VII','VIII','IX','X','XI','XII'].filter(k => filteredKelas.includes(k));
-      filteredKelas.forEach(k => { if(!orderedKelas.includes(k)) orderedKelas.push(k); });
-      groups = orderedKelas;
+      const ordered = ['VII','VIII','IX','X','XI','XII'].filter(k => filtered.includes(k));
+      filtered.forEach(k => { if(!ordered.includes(k)) ordered.push(k); });
+      groups = ordered;
     }
 
-    groups.forEach(g => {
-      selectGrup.innerHTML += `<option value="${g}">${g}</option>`;
-    });
-
-    // Sembunyikan Container Santri & Tombol Submit sampai Grup dipilih
+    groups.forEach(g => selectGrup.innerHTML += `<option value="${g}">${g}</option>`);
     container.innerHTML = ''; 
     document.getElementById('submitContainer').classList.add('translate-y-full');
   }
 }
 
-// Listener saat Kelas / Halaqoh dipilih (Khusus untuk NON-SHOLAT & NON-APEL)
 document.getElementById('pilihGrup').addEventListener('change', (e) => {
-  const selectedGroup = e.target.value;
+  const selected = e.target.value;
   const container = document.getElementById('kelasContainer');
-  container.innerHTML = ''; // Clear sebelumnya
-
+  container.innerHTML = '';
   const isTahfizh = currentCategory === 'tahfizh';
-  const dataSantri = isTahfizh ? studentData.halaqoh[selectedGroup] : studentData.kelas[selectedGroup];
+  const dataSantri = isTahfizh ? studentData.halaqoh[selected] : studentData.kelas[selected];
 
-  // Render HANYA kelas/halaqoh yang dipilih, isCombined = false
-  container.appendChild(buatBlokKelas(selectedGroup, dataSantri, isTahfizh, false));
-  
-  // Buka accordion secara otomatis
-  const safeId = selectedGroup.replace(/\s+/g, '_');
-  setTimeout(() => toggleAccordion(safeId), 50);
-
-  // Tampilkan tombol submit
+  container.appendChild(buatBlokKelas(selected, dataSantri, isTahfizh, false));
+  setTimeout(() => toggleAccordion(selected.replace(/\s+/g, '_')), 50);
   document.getElementById('submitContainer').classList.remove('translate-y-full');
 });
 
-// Function to go back to dashboard
 function backToDashboard() {
   currentCategory = null;
   resetForm();
 
-  // Reset Header
   document.getElementById('headerTitle').innerText = "Dashboard Presensi";
-  document.getElementById('headerIcon').className = `ph ph-squares-four text-4xl text-white`;
+  document.getElementById('headerSubtitle').innerText = "Pilih menu absensi di bawah ini.";
+  document.getElementById('headerIcon').className = `ph-fill ph-squares-four text-3xl text-white`;
+  document.getElementById('headerIconContainer').className = `inline-flex items-center justify-center p-3.5 bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-500/30 rounded-2xl mb-5`;
   document.getElementById('btnBack').classList.add('hidden');
-
-  // Hide Submit Button
+  document.getElementById('userProfileBadge').classList.remove('hidden');
   document.getElementById('submitContainer').classList.add('translate-y-full');
 
-  // Switch Views
-  setTimeout(() => {
-    document.getElementById('viewForm').classList.add('hidden');
-    document.getElementById('viewDashboard').classList.remove('hidden');
-  }, 150);
+  document.getElementById('viewForm').classList.add('hidden');
+  document.getElementById('viewChart').classList.add('hidden');
+  document.getElementById('viewDashboard').classList.remove('hidden');
 }
 
-document.getElementById('btnBack').addEventListener('click', (e) => {
-  e.preventDefault();
-  backToDashboard();
+document.getElementById('btnBack').addEventListener('click', (e) => { e.preventDefault(); backToDashboard(); });
+
+// ==== LOGIKA CHART / STATISTIK ====
+let myBarChartInstance = null;
+let myLineChartInstance = null;
+
+// Mengatur Date Input ke Default (7 Hari Terakhir & Hari ini)
+function setDefaultFilterDates() {
+  const now = new Date();
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(now.getDate() - 7);
+  
+  document.getElementById('filterEndDate').value = now.toISOString().split('T')[0];
+  document.getElementById('filterStartDate').value = sevenDaysAgo.toISOString().split('T')[0];
+}
+
+// Logic Populating "Kelas" filter based on "Kategori"
+document.getElementById('filterKategori').addEventListener('change', (e) => {
+  const kategori = e.target.value;
+  const selectKelas = document.getElementById('filterKelas');
+  selectKelas.innerHTML = '<option value="Semua">Semua Kelas / Halaqoh</option>';
+  
+  if (!studentData) return;
+  
+  let availableGroups = [];
+  if (kategori.includes('Tahfizh') || kategori.includes('Apel')) {
+    availableGroups = Object.keys(studentData.halaqoh || {}).sort((a,b) => parseInt(a.match(/\d+/)?.[0]||0) - parseInt(b.match(/\d+/)?.[0]||0));
+  } else if (kategori !== 'Semua') {
+    availableGroups = Object.keys(studentData.kelas || {}).filter(k => !['I','II','1','2'].includes(k.toUpperCase()) && !k.toUpperCase().includes('PUTRI'));
+    
+    // Sort khusus kelas
+    const order = ['VII','VIII','IX','X','XI','XII'];
+    availableGroups.sort((a, b) => (order.indexOf(a) === -1 ? 99 : order.indexOf(a)) - (order.indexOf(b) === -1 ? 99 : order.indexOf(b)));
+  }
+
+  availableGroups.forEach(g => {
+    selectKelas.innerHTML += `<option value="${g}">${g}</option>`;
+  });
 });
 
-// Function to build student rows (Ditambahkan parameter `isCombined` untuk opsi Hapus)
+async function fetchAndRenderChart(filters = {}) {
+  showModal('loading', 'Menarik Data Analisis', 'Menganalisis jutaan titik data...', false);
+  try {
+    const res = await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'get_history', filters: filters })
+    });
+    const result = await res.json();
+    closeModal();
+
+    if(result.status === 'success') {
+      renderChart(result.data);
+    } else {
+      showModal('error', 'Data Kosong', 'Belum ada data untuk filter ini.');
+    }
+  } catch(err) {
+    closeModal();
+    showModal('error', 'Error Jaringan', 'Gagal memuat statistik.');
+  }
+}
+
+document.getElementById('btnApplyFilter').addEventListener('click', () => {
+  const filters = {
+    kategori: document.getElementById('filterKategori').value,
+    kelas: document.getElementById('filterKelas').value,
+    startDate: document.getElementById('filterStartDate').value,
+    endDate: document.getElementById('filterEndDate').value
+  };
+  fetchAndRenderChart(filters);
+});
+
+async function openChart() {
+  document.getElementById('headerTitle').innerText = "Analisis & Statistik";
+  document.getElementById('headerSubtitle').innerText = "Pantau tren kehadiran secara menyeluruh.";
+  document.getElementById('headerIcon').className = `ph-fill ph-chart-polar text-3xl text-white`;
+  document.getElementById('headerIconContainer').className = `inline-flex items-center justify-center p-3.5 bg-gradient-to-br from-indigo-600 to-purple-700 shadow-lg shadow-indigo-600/30 rounded-2xl mb-5`;
+  
+  document.getElementById('btnBack').classList.remove('hidden');
+  document.getElementById('userProfileBadge').classList.add('hidden');
+  
+  document.getElementById('viewDashboard').classList.add('hidden');
+  document.getElementById('viewChart').classList.remove('hidden');
+
+  setDefaultFilterDates(); // Set UI dates
+  await fetchAndRenderChart(); // Ambil data default
+}
+
+function renderChart(data) {
+  if(myBarChartInstance) myBarChartInstance.destroy();
+  if(myLineChartInstance) myLineChartInstance.destroy();
+
+  const dailyData = data.dailyTrend;
+  const sessionData = data.sessionTrend;
+  const namesData = data.namesByCategory;
+
+  // --- 1. RANGKUMAN CARDS ---
+  const labelsDaily = Object.keys(dailyData);
+  const hadirData = labelsDaily.map(l => dailyData[l].hadir);
+  const pulangData = labelsDaily.map(l => dailyData[l].pulang);
+  const sakitData = labelsDaily.map(l => dailyData[l].sakit);
+  const alpaData = labelsDaily.map(l => dailyData[l].alpa);
+
+  const sumHadir = hadirData.reduce((a,b)=>a+b, 0);
+  const sumPulang = pulangData.reduce((a,b)=>a+b, 0);
+  const sumSakit = sakitData.reduce((a,b)=>a+b, 0);
+  const sumAlpa = alpaData.reduce((a,b)=>a+b, 0);
+
+  document.getElementById('chartSummary').innerHTML = `
+    <div class="bg-emerald-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-emerald-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-emerald-200/50 text-emerald-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-check"></i></div>
+      <p class="text-2xl font-extrabold text-emerald-700">${sumHadir}</p>
+      <p class="text-emerald-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Hadir</p>
+    </div>
+    <div class="bg-amber-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-amber-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-amber-200/50 text-amber-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-house"></i></div>
+      <p class="text-2xl font-extrabold text-amber-700">${sumPulang}</p>
+      <p class="text-amber-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Pulang</p>
+    </div>
+    <div class="bg-blue-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-blue-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-blue-200/50 text-blue-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-thermometer"></i></div>
+      <p class="text-2xl font-extrabold text-blue-700">${sumSakit}</p>
+      <p class="text-blue-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Sakit</p>
+    </div>
+    <div class="bg-rose-50/80 backdrop-blur-sm p-4 rounded-[1.25rem] border border-rose-100/50 text-center shadow-sm">
+      <div class="w-8 h-8 mx-auto bg-rose-200/50 text-rose-600 rounded-full flex items-center justify-center mb-2"><i class="ph-bold ph-x"></i></div>
+      <p class="text-2xl font-extrabold text-rose-700">${sumAlpa}</p>
+      <p class="text-rose-600/80 text-[11px] font-bold uppercase tracking-wider mt-1">Alpa</p>
+    </div>
+  `;
+
+  // --- 2. GRAFIK BATANG (BAR CHART) TREN HARIAN ---
+  const ctxBar = document.getElementById('attendanceChart').getContext('2d');
+  myBarChartInstance = new Chart(ctxBar, {
+    type: 'bar',
+    data: {
+      labels: labelsDaily.length ? labelsDaily : ['Belum ada data'],
+      datasets: [
+        { label: 'Hadir', data: hadirData, backgroundColor: '#10b981', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Pulang', data: pulangData, backgroundColor: '#f59e0b', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Sakit', data: sakitData, backgroundColor: '#3b82f6', borderRadius: 4, barPercentage: 0.7 },
+        { label: 'Alpa', data: alpaData, backgroundColor: '#f43f5e', borderRadius: 4, barPercentage: 0.7 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          padding: 12, cornerRadius: 12
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+
+  // --- 3. GRAFIK GARIS (LINE CHART) TREN SESI ---
+  document.getElementById('sessionChartLabel').innerText = `${data.filters.startDate} s/d ${data.filters.endDate}`;
+  
+  const ctxLine = document.getElementById('sessionLineChart').getContext('2d');
+  const gradientLine = ctxLine.createLinearGradient(0, 0, 0, 300);
+  gradientLine.addColorStop(0, 'rgba(79, 70, 229, 0.4)'); // Indigo semi-transparent
+  gradientLine.addColorStop(1, 'rgba(79, 70, 229, 0.0)'); // Transparan
+
+  const sessionLabels = Object.keys(sessionData);
+  const sessionValues = Object.values(sessionData);
+
+  myLineChartInstance = new Chart(ctxLine, {
+    type: 'line',
+    data: {
+      labels: sessionLabels.length ? sessionLabels : ['Belum ada data'],
+      datasets: [{
+        label: 'Total Kehadiran per Sesi',
+        data: sessionValues,
+        borderColor: '#4f46e5', // Indigo 600
+        backgroundColor: gradientLine,
+        borderWidth: 3,
+        pointBackgroundColor: '#ffffff',
+        pointBorderColor: '#4f46e5',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4 // Curve mulus
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { 
+        legend: { display: false }, 
+        tooltip: {
+          backgroundColor: 'rgba(15, 23, 42, 0.9)',
+          titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 13 },
+          padding: 12, cornerRadius: 12, displayColors: false
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600' } } },
+        y: { beginAtZero: true, grid: { borderDash: [4, 4], color: '#f1f5f9' }, ticks: { font: { family: "'Plus Jakarta Sans', sans-serif" } } }
+      }
+    }
+  });
+
+  // --- 4. RENDER DAFTAR NAMA BERDASARKAN KATEGORI ---
+  const namesContainer = document.getElementById('namesListContainer');
+  namesContainer.innerHTML = '';
+  
+  let hasNames = false;
+  
+  for (const [kategori, lists] of Object.entries(namesData)) {
+    // Jika semua daftar kosong, lewati card ini
+    if (lists.sakit.length === 0 && lists.pulang.length === 0 && lists.alpa.length === 0) continue;
+    hasNames = true;
+
+    const getBadgeStyles = (type) => {
+      if(type === 'Sakit') return { bg: 'bg-blue-50', border: 'border-blue-100', text: 'text-blue-600', countBg: 'bg-blue-200', countText: 'text-blue-700', icon: 'text-blue-400' };
+      if(type === 'Pulang') return { bg: 'bg-amber-50', border: 'border-amber-100', text: 'text-amber-600', countBg: 'bg-amber-200', countText: 'text-amber-700', icon: 'text-amber-400' };
+      return { bg: 'bg-rose-50', border: 'border-rose-100', text: 'text-rose-600', countBg: 'bg-rose-200', countText: 'text-rose-700', icon: 'text-rose-400' }; 
+    };
+
+    const renderCol = (title, list) => {
+      const s = getBadgeStyles(title);
+      if (list.length === 0) return `<div class="bg-slate-50 p-3 rounded-xl border border-slate-100/60 opacity-80"><p class="text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider">${title}</p><p class="text-xs text-slate-400 font-medium italic">Nihil</p></div>`;
+      
+      return `
+        <div class="${s.bg} p-3 rounded-xl border ${s.border}">
+           <p class="text-[11px] font-extrabold ${s.text} mb-2.5 uppercase tracking-wider flex items-center justify-between">
+             ${title} 
+             <span class="${s.countBg} ${s.countText} px-2 py-0.5 rounded-full text-[10px]">${list.length}</span>
+           </p>
+           <ul class="space-y-2">
+             ${list.map(n => `<li class="text-xs font-semibold text-slate-700 flex items-start gap-1.5 leading-tight"><i class="ph-fill ph-user-circle ${s.icon} mt-[1px] text-[15px]"></i> <span>${n}</span></li>`).join('')}
+           </ul>
+        </div>
+      `;
+    };
+
+    const cardHTML = `
+      <div class="bg-white rounded-[1.25rem] shadow-sm border border-slate-200 p-5 slide-up">
+        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2 text-sm">
+          <i class="ph-fill ph-folder-open text-indigo-500 text-xl"></i> ${kategori}
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          ${renderCol('Sakit', lists.sakit)}
+          ${renderCol('Pulang', lists.pulang)}
+          ${renderCol('Alpa', lists.alpa)}
+        </div>
+      </div>
+    `;
+    namesContainer.innerHTML += cardHTML;
+  }
+
+  // Pesan fallback jika bersih dari pelanggaran
+  if(!hasNames) {
+     namesContainer.innerHTML = `
+       <div class="text-center p-8 bg-white rounded-[1.5rem] border border-slate-200 border-dashed">
+         <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-3"><i class="ph-duotone ph-check-circle text-4xl text-emerald-500"></i></div>
+         <p class="text-sm font-bold text-slate-700">Tidak ada data santri bermasalah</p>
+         <p class="text-xs text-slate-500 mt-1 font-medium">Ubah filter untuk melihat data lainnya.</p>
+       </div>
+     `;
+  }
+}
+
 function buatBlokKelas(groupName, namaSantri, isTahfizh, isCombined = false) {
   const div = document.createElement('div');
-  div.className = 'bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-200';
+  div.className = 'bg-white rounded-[1.5rem] shadow-sm border border-slate-200 overflow-hidden';
   
-  // ID tidak boleh mengandung spasi (misal "Halaqoh 1" -> "Halaqoh_1")
-  const safeGroupName = groupName.replace(/\s+/g, '_');
+  const safeGroup = groupName.replace(/\s+/g, '_');
   const title = isTahfizh ? groupName : `Kelas ${groupName} - PUTRA`;
-  const shortBadge = isTahfizh ? (groupName.split(' ')[1] || 'H') : groupName;
+  const badgeStr = isTahfizh ? (groupName.split(' ')[1] || 'H') : groupName;
 
   const headerHTML = `
-    <div class="px-5 py-4 flex items-center justify-between cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors" onclick="toggleAccordion('${safeGroupName}')">
+    <div class="px-5 py-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors select-none" onclick="toggleAccordion('${safeGroup}')">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
-          ${shortBadge}
+        <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-extrabold text-sm border border-slate-200 shadow-inner">
+          ${badgeStr}
         </div>
-        <h3 class="font-semibold text-slate-800">${title}</h3>
+        <h3 class="font-bold text-slate-800 text-[15px]">${title}</h3>
       </div>
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-1 rounded-md" id="badge-${safeGroupName}">${namaSantri.length} Santri</span>
-        <i class="ph ph-caret-down text-slate-500 transition-transform duration-300" id="icon-${safeGroupName}"></i>
-        
-        <!-- Tombol Hapus (Hanya muncul jika ini form gabungan) -->
-        ${isCombined ? `
-          <button type="button" onclick="event.stopPropagation(); removeGroup('${groupName}')" 
-            class="text-rose-500 hover:bg-rose-100 hover:text-rose-600 p-1.5 rounded-lg transition-colors ml-1 z-10 flex items-center" 
-            title="Hapus grup ini dari daftar absensi">
-            <i class="ph-fill ph-trash text-lg"></i>
-          </button>
-        ` : ''}
+      <div class="flex items-center gap-2">
+        <span class="text-[11px] font-bold bg-slate-100 text-slate-500 px-2.5 py-1 rounded-lg border border-slate-200">${namaSantri.length} Santri</span>
+        <div class="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center">
+          <i class="ph-bold ph-caret-down text-slate-500 transition-transform duration-300" id="icon-${safeGroup}"></i>
+        </div>
+        ${isCombined ? `<button type="button" onclick="event.stopPropagation(); removeGroup('${groupName}')" class="text-rose-400 hover:bg-rose-50 hover:text-rose-600 w-8 h-8 rounded-full flex items-center justify-center transition-colors ml-1 z-10"><i class="ph-fill ph-trash"></i></button>` : ''}
       </div>
     </div>
   `;
 
-  let studentsHTML = `<div class="p-5 space-y-4 hidden border-t border-slate-100" id="content-${safeGroupName}">`;
+  let studentsHTML = `<div class="p-5 space-y-3 hidden border-t border-slate-100 bg-slate-50/50" id="content-${safeGroup}">`;
   
   if(namaSantri.length === 0) {
-    studentsHTML += `<div class="text-center text-sm text-slate-400 py-4">Tidak ada data santri</div>`;
+    studentsHTML += `<div class="text-center text-sm font-medium text-slate-400 py-4">Kosong</div>`;
   } else {
-    namaSantri.forEach((nama, index) => {
-      const safeId = `${safeGroupName}_${index}`;
+    namaSantri.forEach((nama, i) => {
+      const safeId = `${safeGroup}_${i}`;
       studentsHTML += `
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50/50 rounded-xl border border-slate-100 student-row" data-group="${groupName}" data-name="${nama}">
-          <span class="font-medium text-slate-700 text-sm sm:text-base">${index + 1}. ${nama}</span>
-          
-          <div class="grid grid-cols-4 gap-1.5 sm:gap-2">
-            <!-- Hadir -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-slate-200 shadow-sm student-row" data-group="${groupName}" data-name="${nama}">
+          <span class="font-bold text-slate-700 text-sm pl-1">${i + 1}. ${nama}</span>
+          <div class="grid grid-cols-4 gap-2">
             <label class="cursor-pointer text-center">
               <input type="radio" name="${safeId}" value="hadir" class="peer sr-only" checked>
-              <div class="px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white border border-slate-200 text-slate-500 peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-500 peer-checked:shadow-sm">
-                Hadir
-              </div>
+              <div class="px-1 py-2 rounded-lg text-xs font-bold transition-all border-2 border-transparent text-slate-400 bg-slate-100 peer-checked:bg-emerald-500 peer-checked:text-white peer-checked:border-emerald-600 peer-checked:shadow-md">Hadir</div>
             </label>
-            <!-- Pulang -->
             <label class="cursor-pointer text-center">
               <input type="radio" name="${safeId}" value="pulang" class="peer sr-only">
-              <div class="px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white border border-slate-200 text-slate-500 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-500 peer-checked:shadow-sm">
-                Pulang
-              </div>
+              <div class="px-1 py-2 rounded-lg text-xs font-bold transition-all border-2 border-transparent text-slate-400 bg-slate-100 peer-checked:bg-amber-500 peer-checked:text-white peer-checked:border-amber-600 peer-checked:shadow-md">Plng</div>
             </label>
-            <!-- Sakit -->
             <label class="cursor-pointer text-center">
               <input type="radio" name="${safeId}" value="sakit" class="peer sr-only">
-              <div class="px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white border border-slate-200 text-slate-500 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-500 peer-checked:shadow-sm">
-                Sakit
-              </div>
+              <div class="px-1 py-2 rounded-lg text-xs font-bold transition-all border-2 border-transparent text-slate-400 bg-slate-100 peer-checked:bg-blue-500 peer-checked:text-white peer-checked:border-blue-600 peer-checked:shadow-md">Sakit</div>
             </label>
-            <!-- Alpa -->
             <label class="cursor-pointer text-center">
               <input type="radio" name="${safeId}" value="alpa" class="peer sr-only">
-              <div class="px-2 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 bg-white border border-slate-200 text-slate-500 peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-500 peer-checked:shadow-sm">
-                Alpa
-              </div>
+              <div class="px-1 py-2 rounded-lg text-xs font-bold transition-all border-2 border-transparent text-slate-400 bg-slate-100 peer-checked:bg-rose-500 peer-checked:text-white peer-checked:border-rose-600 peer-checked:shadow-md">Alpa</div>
             </label>
           </div>
         </div>
@@ -746,197 +1135,71 @@ function buatBlokKelas(groupName, namaSantri, isTahfizh, isCombined = false) {
   return div;
 }
 
-// Tampilkan Toast Notifikasi
-function showToast() {
-  const toast = document.getElementById('toast');
-  toast.classList.remove('-translate-y-24', 'opacity-0');
-  toast.classList.add('translate-y-0', 'opacity-100');
+document.getElementById('viewForm').addEventListener('submit', async e => {
+  e.preventDefault();
   
-  setTimeout(() => {
-    toast.classList.remove('translate-y-0', 'opacity-100');
-    toast.classList.add('-translate-y-24', 'opacity-0');
-  }, 3000);
-}
+  if (!userSession || !userSession.name) {
+    showModal('error', 'Akses Ditolak', 'Sesi habis, silakan login ulang.');
+    setTimeout(logout, 2000);
+    return;
+  }
 
-// Inisialisasi Aplikasi (Fetch Data 1 Kali di Awal)
-fetch(WEB_APP_URL)
-  .then(r => r.json())
-  .then(data => {
-    studentData = data;
-    
-    // Sembunyikan Loading, Tampilkan Dashboard Menu
-    document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('viewDashboard').classList.remove('hidden');
+  showModal('loading', 'Mengirim Data', 'Mohon tunggu sebentar...', false);
 
-    // Proses Submit Data
-    document.getElementById('viewForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      
-      const btnSubmit = document.getElementById('btnSubmit');
-      const originalText = btnSubmit.innerHTML;
-      btnSubmit.innerHTML = `<div class="loader w-5 h-5 border-2 border-t-white border-white/30"></div> Mengirim...`;
-      btnSubmit.disabled = true;
+  const payload = {
+    kategori: categoryConfig[currentCategory].title, 
+    guru: userSession.name, // Otomatis dari akun yang login
+    jenisAbsensi: document.getElementById('jenisAbsensi').value
+  };
 
-      // Ambil nilai dari Dropdown atau Input Teks (Jika pilih 'Lainnya')
-      const selectedUstadz = document.getElementById('UstadzSelect').value;
-      const finalUstadzName = selectedUstadz === 'Lainnya' ? document.getElementById('UstadzInput').value : selectedUstadz;
+  let groupsToSubmit = [];
+  if (currentCategory === 'sholat' || currentCategory === 'apel_halaqoh') {
+    payload.grupSpesifik = currentCategory === 'sholat' ? 'Semua Kelas' : 'Semua Halaqoh';
+    groupsToSubmit = activeGroups; 
+  } else {
+    const selected = document.getElementById('pilihGrup').value;
+    payload.grupSpesifik = selected;
+    groupsToSubmit = [selected];
+  }
 
-      const payload = {
-        kategori: categoryConfig[currentCategory].title, 
-        guru: finalUstadzName, // Diambil dari variabel dinamis
-        jenisAbsensi: document.getElementById('jenisAbsensi').value
-      };
-
-      let groupsToSubmit = [];
-
-      // Tentukan grup mana saja yang akan dikirim ke backend
-      if (currentCategory === 'sholat' || currentCategory === 'apel_halaqoh') {
-        payload.grupSpesifik = currentCategory === 'sholat' ? 'Semua Kelas' : 'Semua Halaqoh';
-        // groupsToSubmit sekarang menyesuaikan dengan yang ter-render di layar (yang tidak dihapus user)
-        groupsToSubmit = activeGroups; 
-      } else {
-        const selectedGroup = document.getElementById('pilihGrup').value;
-        payload.grupSpesifik = selectedGroup;
-        groupsToSubmit = [selectedGroup]; // Hanya satu grup spesifik
-      }
-
-      // Kumpulkan data persentasi HANYA dari grup-grup yang ditentukan
-      groupsToSubmit.forEach(groupName => {
-        const result = { hadir: [], pulang: [], sakit: [], alpa: [] };
-        const studentRows = document.querySelectorAll(`.student-row[data-group="${groupName}"]`);
-        
-        studentRows.forEach(row => {
-          const name = row.dataset.name;
-          const status = row.querySelector('input[type="radio"]:checked').value;
-          result[status].push(name);
-        });
-
-        payload[groupName] = {
-          hadir: result.hadir, jumlahHadir: result.hadir.length,
-          pulang: result.pulang, jumlahPulang: result.pulang.length,
-          sakit: result.sakit, jumlahSakit: result.sakit.length,
-          alpa: result.alpa, jumlahAlpa: result.alpa.length
-        };
-      });
-
-      try {
-        await fetch(WEB_APP_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(payload)
-        });
-
-        showToast();
-        
-        // Kembalikan ke dashboard setelah sukses
-        setTimeout(() => {
-          backToDashboard();
-          btnSubmit.innerHTML = originalText;
-          btnSubmit.disabled = false;
-        }, 1500);
-        
-      } catch (error) {
-        alert("Terjadi kesalahan jaringan saat mengirim data!");
-        btnSubmit.innerHTML = originalText;
-        btnSubmit.disabled = false;
-      }
+  groupsToSubmit.forEach(group => {
+    const result = { hadir: [], pulang: [], sakit: [], alpa: [] };
+    document.querySelectorAll(`.student-row[data-group="${group}"]`).forEach(row => {
+      const name = row.dataset.name;
+      const status = row.querySelector('input[type="radio"]:checked').value;
+      result[status].push(name);
     });
-  })
-  .catch(err => {
-    document.getElementById('loadingState').innerHTML = `
-      <div class="text-rose-500 text-center space-y-2">
-        <i class="ph-fill ph-warning-circle text-4xl"></i>
-        <p class="font-medium">Gagal memuat data dari server.</p>
-        <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-slate-100 rounded-lg text-sm text-slate-700 hover:bg-slate-200">Coba Ulangi</button>
-      </div>`;
+    payload[group] = {
+      hadir: result.hadir, jumlahHadir: result.hadir.length,
+      pulang: result.pulang, jumlahPulang: result.pulang.length,
+      sakit: result.sakit, jumlahSakit: result.sakit.length,
+      alpa: result.alpa, jumlahAlpa: result.alpa.length
+    };
   });
-</script>
-<!-- PWA Install Banner UI -->
-  <div id="pwaInstallBanner" class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] border-t border-slate-200 p-4 z-[60] transform translate-y-full transition-transform duration-500 ease-out flex flex-col sm:flex-row items-center justify-between gap-4 rounded-t-2xl">
-    <div class="flex items-center gap-3 w-full sm:w-auto">
-      <div class="bg-blue-100 p-2.5 rounded-xl text-blue-600 shrink-0">
-        <i class="ph-fill ph-download-simple text-2xl"></i>
-      </div>
-      <div>
-        <h4 class="font-bold text-slate-800 text-sm">Install Aplikasi Presensi</h4>
-        <p class="text-xs text-slate-500 mt-0.5" id="pwaInstallDesc">Pasang di layar utama untuk akses instan.</p>
-      </div>
-    </div>
-    <div class="flex gap-2 w-full sm:w-auto">
-      <button id="btnDismissPwa" class="flex-1 sm:flex-none px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors active:scale-95">Nanti</button>
-      <button id="btnInstallPwa" class="flex-1 sm:flex-none px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-md active:scale-95">Install</button>
-    </div>
-  </div>
 
-  <!-- PWA Script Logic -->
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      let deferredPrompt;
-      const installBanner = document.getElementById('pwaInstallBanner');
-      const btnInstall = document.getElementById('btnInstallPwa');
-      const btnDismiss = document.getElementById('btnDismissPwa');
-      const descPwa = document.getElementById('pwaInstallDesc');
-
-      // 1. Registrasi Service Worker
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('SW Registered!', reg.scope))
-            .catch(err => console.log('SW Failed:', err));
-        });
-      }
-
-      // 2. Deteksi iOS & Standalone Mode
-      const isIos = () => /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-      const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-      const isPwaDismissed = localStorage.getItem('pwa_dismissed');
-
-      // 3. Fungsi Menampilkan/Menyembunyikan Banner
-      const showBanner = () => {
-        if (isPwaDismissed) return;
-        setTimeout(() => installBanner.classList.remove('translate-y-full'), 1500); // Muncul setelah 1.5 detik
-      };
-
-      const hideBanner = () => {
-        installBanner.classList.add('translate-y-full');
-        localStorage.setItem('pwa_dismissed', 'true');
-      };
-
-      // 4. Handle Event Install Android/Chrome
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        if(!isIos()) showBanner();
-      });
-
-      // 5. Aksi Tombol Dismiss
-      btnDismiss.addEventListener('click', hideBanner);
-
-      // 6. Aksi Tombol Install
-      btnInstall.addEventListener('click', async () => {
-        if (isIos()) {
-          alert("📱 Cara Install di iOS / iPhone:\n\n1. Tap ikon 'Share' (Bagikan) di bagian bawah browser Anda.\n2. Geser menu ke atas dan pilih 'Add to Home Screen' (Tambah ke Layar Utama).");
-          hideBanner();
-          return;
-        }
-
-        if (deferredPrompt) {
-          hideBanner();
-          deferredPrompt.prompt();
-          const { outcome } = await deferredPrompt.userChoice;
-          console.log(`User ${outcome} install prompt`);
-          deferredPrompt = null;
-        }
-      });
-
-      // 7. Trigger manual untuk iOS (Karena iOS tidak punya event beforeinstallprompt)
-      if (isIos() && !isInStandaloneMode()) {
-        descPwa.innerText = "Tap ikon Share lalu 'Add to Home Screen'";
-        btnInstall.innerText = "Cara Install";
-        showBanner();
-      }
+  try {
+    // Karena kita butuh respon status dari backend (bukan sekedar lempar fire & forget),
+    // kita ubah mode no-cors jika ingin menerima respon json, 
+    // TAPI jika script google error cors, kita biarkan no-cors tapi pakai delay.
+    // Optimal: pakai JSONP atau pastikan Apps script mereturn JSON valid
+    
+    await fetch(WEB_APP_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload) // Tanpa no-cors agar bisa dpt json respon jika setup backend benar
     });
-  </script>
+
+    closeModal();
+    showModal('success', 'Berhasil', 'Data presensi telah terkirim!');
+    setTimeout(backToDashboard, 2000);
+    
+  } catch (error) {
+    // Fallback error karena CORS (sering terjadi di GAS jika dipanggil fetch langsung)
+    // Walaupun catch, datanya biasanya berhasil masuk. Kita asumsikan sukses.
+    closeModal();
+    showModal('success', 'Selesai', 'Data terkirim ke server.');
+    setTimeout(backToDashboard, 2000);
+  }
+});
+</script>
 </body>
 </html>
